@@ -6,7 +6,7 @@
 
 //cls && g++ -std=c++1z -O3 -Wall -Wextra -pedantic radixSortTests.cpp -o radixSort
 
-//cls && clang++ -std=c++1z -Werror -fvisibility=hidden -Wno-endif-labels -Wno-missing-field-initializers -Wno-error=effc++ -Wno-error=inline -Wno-error=aggregate-return -Weverything -fdiagnostics-color=always -Wno-c++98-compat-pedantic -Wno-error=deprecated -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-error=global-constructors -Wno-padded radixSortTests.cpp -o radixSort -stdlib=libc++ -Wno-undefined-func-template
+//cls && clang++ -std=c++1z -Werror -fvisibility=hidden -Wno-endif-labels -Wno-missing-field-initializers -Wno-error=effc++ -Wno-error=inline -Wno-error=aggregate-return -Weverything -fdiagnostics-color=always -Wno-c++98-compat-pedantic -Wno-error=deprecated -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-error=global-constructors -Wno-padded radixSortTests.cpp -o radixSort -stdlib=libc++ -Wno-undefined-func-template -Wno-missing-braces
 
 #include <limits>
 #include <random>
@@ -17,6 +17,60 @@ using namespace risuwwv;
 
 namespace testcases
 {
+    void array_testcases()
+    {
+        std::array<int, 10> v{1,54,5,21,42,1,21,4,54,4};
+        auto vc = v;
+
+        radix_sort(v);
+        std::sort(vc.begin(), vc.end()); 
+        assert(vc.size() == v.size() && std::equal(vc.begin(), vc.end(), v.begin()));
+
+        int v2[]{31,54,5,21,42,1,21,4,54,4};
+        int vc2[10]; 
+        std::copy(std::begin(v2), std::end(v2), std::begin(vc2));
+
+        radix_sort(v2);
+        std::sort(std::begin(vc2), std::end(vc2)); 
+        assert(std::size(vc2) == std::size(v2) && std::equal(std::begin(vc2), std::end(vc2), std::begin(v2)));    
+
+        const int v3[]{-31,54,5,21,42,1,21,4,54,4};
+        int vc3[10]; 
+        std::copy(std::begin(v3), std::end(v3), std::begin(vc3));
+
+        std::vector<int> target;
+        radix_sort(v3, std::back_inserter(target));
+        std::sort(std::begin(vc3), std::end(vc3)); 
+        assert(std::size(vc3) == std::size(v3) && std::equal(std::begin(vc3), std::end(vc3), std::begin(target)));  
+
+
+        std::vector<std::array<int, 3>> v4{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}};  
+        auto vc4 = v4;
+
+        radix_sort(v4);
+        std::sort(std::begin(vc4), std::end(vc4));        
+        assert(std::size(vc4) == std::size(v4) && std::equal(std::begin(vc4), std::end(vc4), std::begin(v4)));    
+
+        /*
+        std::for_each(v4.begin(), v4.end(), [](const auto& elem)
+        {
+            std::copy(elem.begin(), elem.end(), std::ostream_iterator<int>(std::cout, " "));
+            std::cout << '\n';
+        }); 
+        */
+
+        //TODO: does not work with const int: *(++std::back_inserter(target2)) = *std::begin(v5); does not compile
+        std::vector<const std::array<int, 3>> v5{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}};  
+        std::vector<std::array<int, 3>> vc5; //= v5 does not work
+        std::copy(v5.begin(), v5.end(), std::back_inserter(vc5));
+
+        std::vector<std::array<int, 3>> target2;
+
+        radix_sort(v5, std::back_inserter(target2));
+        std::sort(std::begin(vc5), std::end(vc5));        
+        assert(std::size(vc5) == std::size(target2) && std::equal(std::begin(vc5), std::end(vc5), std::begin(target2)));    
+    }
+
     void const_testcases()
     {
         const std::vector<int> v{-1356569119, -422563130,-1352029410,395770343,1785423163,-1351687749,-559142332,-140471621,-313712167,627271371,-1604412862,763551832,440576809,1616784356,-1399382555};
@@ -641,6 +695,7 @@ namespace testcases
 
 int main()
 {
+    testcases::array_testcases();
     testcases::const_testcases();
 
     testcases::tuple1_testcases();

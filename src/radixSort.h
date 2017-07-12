@@ -161,12 +161,12 @@ namespace risuwwv
         template<typename T>
         inline constexpr bool is_tuple_v = is_tuple<T>::value;
         
-        template<typename... Ts, std::size_t... Is>
+        template<typename... Ts, size_t... Is>
         constexpr auto radix_variadic_helper(const std::tuple<Ts...>& t, std::index_sequence<Is...>) {
             return std::make_tuple(radix_helper<Ts>{}(std::get<Is>(t))...);   
         }
         
-        template<typename... Ts, std::size_t... Is>
+        template<typename... Ts, size_t... Is>
         constexpr auto radix_variadic_helper(const std::pair<Ts...>& t, std::index_sequence<Is...>) {
             return std::make_tuple(radix_helper<Ts>{}(std::get<Is>(t))...);   
         }
@@ -177,10 +177,23 @@ namespace risuwwv
         {
             constexpr auto operator()(T val)
             {
-                constexpr std::size_t size = std::tuple_size_v<T>;
+                constexpr size_t size = std::tuple_size_v<T>;
                 return radix_variadic_helper(val, std::make_index_sequence<size>{});
             }
         };
+
+        template<typename T, size_t N>
+        struct radix_helper<std::array<T, N>>
+        {
+            constexpr auto operator()(const std::array<T, N>& val)
+            {
+                //remove inner consts from tuple_cat: we don't want tuple<const int, ...> but tuple<int>
+                using TupledType = recursive_decay_t<decltype(tuple_cat(std::tuple<>{}, val))>;
+
+                return radix_helper<TupledType>{}(TupledType{tuple_cat(std::tuple<>{}, val)});
+            }
+        };
+        
         
         template<size_t bitPerBucket, typename T, typename U = void>
         struct buckets_count
@@ -190,7 +203,7 @@ namespace risuwwv
         template<size_t bitPerBucket, typename T>
         struct buckets_count<bitPerBucket, T, std::enable_if_t<std::is_arithmetic_v<T>>>
         {
-            constexpr std::size_t operator()()
+            constexpr size_t operator()()
             {
                 return (sizeof(T)*8+bitPerBucket-1)/bitPerBucket;
             }        
@@ -199,7 +212,7 @@ namespace risuwwv
         template<size_t bitPerBucket, typename... Ts>
         struct buckets_count<bitPerBucket, std::tuple<Ts...>>
         {
-            constexpr std::size_t operator()()
+            constexpr size_t operator()()
             {
                 return (buckets_count<bitPerBucket, Ts>{}() + ...);
             }        
@@ -208,7 +221,7 @@ namespace risuwwv
         template<size_t bitPerBucket, typename... Ts>
         struct buckets_count<bitPerBucket, const std::tuple<Ts...>>
         {
-            constexpr std::size_t operator()()
+            constexpr size_t operator()()
             {
                 return (buckets_count<bitPerBucket, Ts>{}() + ...);
             }        
@@ -217,7 +230,7 @@ namespace risuwwv
         template<size_t bitPerBucket, typename T, typename U>
         struct buckets_count<bitPerBucket, std::pair<T, U>>
         {
-            constexpr std::size_t operator()()
+            constexpr size_t operator()()
             {
                 return buckets_count<bitPerBucket, T>{}() + buckets_count<bitPerBucket, U>{}();
             }        
@@ -226,7 +239,7 @@ namespace risuwwv
         /*template<size_t bitPerBucket, typename T, typename U>
         struct buckets_count<bitPerBucket, const std::pair<T, U>>//TODO is this needed: we use it only on tuple or plain types right? what about tuple of tuple inputs?
         {
-            constexpr std::size_t operator()()
+            constexpr size_t operator()()
             {
                 return buckets_count<bitPerBucket, T>{}() + buckets_count<bitPerBucket, U>{}();
             }        
@@ -268,7 +281,7 @@ namespace risuwwv
         };    
         
         
-        template <std::size_t... Ns, typename... Ts>
+        template <size_t... Ns, typename... Ts>
         constexpr auto tail_helper(std::index_sequence<Ns...>, const std::tuple<Ts...>& t)
         {
             return std::make_tuple(std::get<Ns+1>(t)...);
@@ -310,23 +323,23 @@ namespace risuwwv
         };        
 
         template<typename T>
-        constexpr auto get_bits(const T& val, std::size_t i, size_t bitPerBucket, std::size_t N)
+        constexpr auto get_bits(const T& val, size_t i, size_t bitPerBucket, size_t N)
         {
-            return (static_cast<std::size_t>(val >> (i*bitPerBucket)) & (N-1));
+            return (static_cast<size_t>(val >> (i*bitPerBucket)) & (N-1));
         }
 
-        template<size_t bitPerBucket, std::size_t Idx, std::size_t Idx2, std::size_t N, int M, typename TupleType>
-        constexpr void fill_buckets_helper(std::array<std::size_t, N> (&buckets)[M], const TupleType& kp)
+        template<size_t bitPerBucket, size_t Idx, size_t Idx2, size_t N, int M, typename TupleType>
+        constexpr void fill_buckets_helper(std::array<size_t, N> (&buckets)[M], const TupleType& kp)
         {
             if constexpr (Idx < std::tuple_size_v<TupleType>)
             {
                 const auto& val = std::get<std::tuple_size_v<TupleType>-1-Idx>(kp);//the least significant member of the tuple is the last one...
                 
-                const std::size_t upper = (8*sizeof(val)+bitPerBucket-1)/bitPerBucket;
+                const size_t upper = (8*sizeof(val)+bitPerBucket-1)/bitPerBucket;
                 
-                for(std::size_t i = 0; i < upper; ++i)
+                for(size_t i = 0; i < upper; ++i)
                 {
-                    std::size_t bits = get_bits(val, i, bitPerBucket, N);
+                    size_t bits = get_bits(val, i, bitPerBucket, N);
   
                     ++buckets[Idx2+i][bits];
                 }
@@ -335,26 +348,26 @@ namespace risuwwv
             }
         }
 
-        template<size_t bitPerBucket, std::size_t N, int M, typename TupleType>
-        constexpr void fill_buckets(std::array<std::size_t, N> (&buckets)[M], const TupleType& kp)
+        template<size_t bitPerBucket, size_t N, int M, typename TupleType>
+        constexpr void fill_buckets(std::array<size_t, N> (&buckets)[M], const TupleType& kp)
         {
             fill_buckets_helper<bitPerBucket, 0, 0>(buckets, kp);
         }  
 
-        template<std::size_t Idx, std::size_t size_v, std::size_t start, size_t bitPerBucket, typename KeyValuePair, typename Array>
-        constexpr KeyValuePair* use_buckets(KeyValuePair* tmp, KeyValuePair* tmp2, std::size_t size, Array& buckets)
+        template<size_t Idx, size_t size_v, size_t start, size_t bitPerBucket, typename KeyValuePair, typename Array>
+        constexpr KeyValuePair* use_buckets(KeyValuePair* tmp, KeyValuePair* tmp2, size_t size, Array& buckets)
         {
-            constexpr std::size_t index = size_v-1-Idx;
-            constexpr std::size_t upper = (8*sizeof(decltype(std::get<index>(tmp[0].first)))+bitPerBucket-1)/bitPerBucket;
+            constexpr size_t index = size_v-1-Idx;
+            constexpr size_t upper = (8*sizeof(decltype(std::get<index>(tmp[0].first)))+bitPerBucket-1)/bitPerBucket;
             
-            for(std::size_t i = 0; i < upper; ++i)
+            for(size_t i = 0; i < upper; ++i)
             { 
-                for(std::size_t j = 0; j < size; ++j)
+                for(size_t j = 0; j < size; ++j)
                 {
                     auto& elem = tmp[j];
                     const auto& val = std::get<index>(elem.first);//the least significant member of the tuple is the last one...
 
-                    std::size_t bits = get_bits(val, i, bitPerBucket, (1<<bitPerBucket));
+                    size_t bits = get_bits(val, i, bitPerBucket, (1<<bitPerBucket));
                     
                     tmp2[buckets[i+start][bits]] = elem;
                     ++buckets[i+start][bits];
@@ -394,15 +407,16 @@ namespace risuwwv
 
         //typename It::value_type does not work because it can have nested const fields
         //typename OutIt::value_type is void for a back_inserter...
-        using KeyValuePair = std::pair<KeyType, details::recursive_decay_t<typename It::value_type>>;
+        //std::iterator_traits is needed when It is a plain pointer.
+        using KeyValuePair = std::pair<KeyType, details::recursive_decay_t<typename std::iterator_traits<It>::value_type>>;
      
         std::vector<KeyValuePair> tmp, tmp2;
         
         using iterator_category = typename std::iterator_traits<It>::iterator_category;
         if constexpr(std::is_same_v<iterator_category, std::random_access_iterator_tag>)
         {
-            tmp.reserve(static_cast<std::size_t>(end-begin)); 
-            tmp2.reserve(static_cast<std::size_t>(end-begin));  
+            tmp.reserve(static_cast<size_t>(end-begin)); 
+            tmp2.reserve(static_cast<size_t>(end-begin));  
         }
         
         //TODO think about this  
@@ -414,7 +428,7 @@ namespace risuwwv
         constexpr size_t bitPerBucket = 11;
         constexpr int bucketsCount = details::buckets_count<bitPerBucket, KeyType>{}();
         
-        std::array<std::size_t, (1<<bitPerBucket)> buckets[bucketsCount]{};//zero init
+        std::array<size_t, (1<<bitPerBucket)> buckets[bucketsCount]{};//zero init
 
         //fill buckets
         for(It it = begin; it != end; ++it)
@@ -431,10 +445,10 @@ namespace risuwwv
         //buckets[0] is the least significant histogram of the least significant member of the tuple
         
         //sum buckets:
-        for(std::size_t i = 0; i < bucketsCount; ++i)
+        for(size_t i = 0; i < bucketsCount; ++i)
         { 
-		    std::size_t sum = 0;
-		    std::size_t tsum;
+		    size_t sum = 0;
+		    size_t tsum;
 		    for (auto it = buckets[i].begin(); it != buckets[i].end(); ++it) 
 		    {
 			    tsum = *it + sum;
@@ -443,7 +457,7 @@ namespace risuwwv
 		    }         
         }
             
-        constexpr std::size_t size_v = std::tuple_size_v<decltype(tmp[0].first)>;
+        constexpr size_t size_v = std::tuple_size_v<decltype(tmp[0].first)>;
         auto size = tmp.size();
         auto ptr = details::use_buckets<0, size_v, 0, bitPerBucket>(tmp.data(), tmp2.data(), tmp.size(), buckets);
           
