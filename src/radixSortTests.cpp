@@ -4,12 +4,18 @@
 // found in the LICENSE file.
 //
 
-//cls && g++ -std=c++1z -O3 -Wall -Wextra -pedantic radixSortTests.cpp -o radixSort
+//cls && g++ -o radixSort radixSortTests.cpp -march=native -DNDEBUG -fno-math-errno -flto -O3 -std=c++1z -Werror -fvisibility=hidden -Wno-endif-labels -Wno-missing-field-initializers -Wno-error=effc++ -Wno-error=inline -Wno-error=aggregate-return -Wuseless-cast -Wzero-as-null-pointer-constant -Wnoexcept -Wsuggest-final-methods -Wsuggest-final-types -Wsuggest-override -Wtrampolines -Wall -Wextra -Wconversion -Wold-style-cast -Wabi -Wimport -Wmissing-format-attribute -Wmissing-noreturn -Wodr -Woverlength-strings -Wpacked -Wunreachable-code -Wvariadic-macros -Wunused-local-typedefs -Wvla -pedantic -pedantic-errors -Wfloat-equal -Wundef -Wredundant-decls -Wshadow -Wwrite-strings -Wpointer-arith -Wcast-qual -Wswitch-default -Wmissing-include-dirs -Wcast-align -Wformat-nonliteral -Wswitch-enum -Wnon-virtual-dtor -Wctor-dtor-privacy -Wsign-promo -Wsign-conversion -Wdisabled-optimization -Weffc++ -Winline -Winvalid-pch -Wstack-protector -Wmissing-declarations -Woverloaded-virtual -Wvector-operation-performance -Wlogical-op -Wno-pmf-conversions -Wunsafe-loop-optimizations -Wstrict-null-sentinel -Wno-error=noexcept -Wno-missing-declarations -Wno-inline -Wno-unsafe-loop-optimizations  -Wshift-overflow=2 -Wnull-dereference -Wduplicated-cond -Walloc-zero -Walloca  
 
 //cls && clang++ -std=c++1z -Werror -fvisibility=hidden -Wno-endif-labels -Wno-missing-field-initializers -Wno-error=effc++ -Wno-error=inline -Wno-error=aggregate-return -Weverything -fdiagnostics-color=always -Wno-c++98-compat-pedantic -Wno-error=deprecated -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-error=global-constructors -Wno-padded radixSortTests.cpp -o radixSort -stdlib=libc++ -Wno-undefined-func-template -Wno-missing-braces
 
 #include <limits>
+#include <utility>
 #include <random>
+#include <list>
+#include <array>
+#include <vector>
+#include <iostream>
+#include <cassert>
 
 #include "radixSort.h"
 
@@ -17,6 +23,45 @@ using namespace risuwwv;
 
 namespace testcases
 {
+
+//on compilater that don't have header detection, ignore this
+#if defined(__has_include)
+#if __has_include("boost/pfr.hpp")
+
+    struct TestStruct { // no ostream operator defined!
+        int i;
+        char c;
+        double d;
+    };
+
+    //for std::sort only, not used by radix_sort
+    bool operator<(const TestStruct& lhs, const TestStruct& rhs)
+    {
+        return boost::pfr::flat_structure_to_tuple(lhs) < boost::pfr::flat_structure_to_tuple(rhs);
+    }
+
+    //for the test only
+    bool operator==(const TestStruct& lhs, const TestStruct& rhs)
+    {
+        return boost::pfr::flat_structure_to_tuple(lhs) == boost::pfr::flat_structure_to_tuple(rhs);
+    }
+
+    void magic_get_testcases()
+    {
+        //gcc-7.1.0 does not accept the example on https://github.com/apolukhin/magic_get but we don't need as many features
+
+        std::vector<TestStruct> v{TestStruct{1,'c', 41.0}, TestStruct{-1,'c', 41.0}, TestStruct{-1,'b', 41.0}, TestStruct{1,'b', 41.0}};
+        auto vc = v;
+
+        radix_sort(v);   
+        std::sort(vc.begin(), vc.end());    
+        assert(vc.size() == v.size() && std::equal(vc.begin(), vc.end(), v.begin())); 
+
+        //pfr.hpp is so cool!!
+    }
+#endif//defined(__has_include)
+#endif//__has_include("boost/pfr.hpp")
+
     void array_testcases()
     {
         std::array<int, 10> v{1,54,5,21,42,1,21,4,54,4};
@@ -43,7 +88,6 @@ namespace testcases
         std::sort(std::begin(vc3), std::end(vc3)); 
         assert(std::size(vc3) == std::size(v3) && std::equal(std::begin(vc3), std::end(vc3), std::begin(target)));  
 
-
         std::vector<std::array<int, 3>> v4{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}};  
         auto vc4 = v4;
 
@@ -51,24 +95,45 @@ namespace testcases
         std::sort(std::begin(vc4), std::end(vc4));        
         assert(std::size(vc4) == std::size(v4) && std::equal(std::begin(vc4), std::end(vc4), std::begin(v4)));    
 
-        /*
-        std::for_each(v4.begin(), v4.end(), [](const auto& elem)
-        {
-            std::copy(elem.begin(), elem.end(), std::ostream_iterator<int>(std::cout, " "));
-            std::cout << '\n';
-        }); 
-        */
+        auto res = risuwwv::details::decay_value(std::array<const int, 3>{1,2,7});
+        static_assert(std::is_same_v<decltype(res), std::array<int, 3>>);
+        assert((res == std::array<int, 3>{1,2,7}));
 
-        //TODO: does not work with const int: *(++std::back_inserter(target2)) = *std::begin(v5); does not compile
-        std::vector<const std::array<int, 3>> v5{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}};  
+        std::vector<std::array<const int, 3>> v5{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}}; 
         std::vector<std::array<int, 3>> vc5; //= v5 does not work
-        std::copy(v5.begin(), v5.end(), std::back_inserter(vc5));
+        std::transform(v5.begin(), v5.end(), std::back_inserter(vc5), [](const auto& elem){
+            return risuwwv::details::decay_value(elem);
+        });
 
         std::vector<std::array<int, 3>> target2;
 
         radix_sort(v5, std::back_inserter(target2));
         std::sort(std::begin(vc5), std::end(vc5));        
-        assert(std::size(vc5) == std::size(target2) && std::equal(std::begin(vc5), std::end(vc5), std::begin(target2)));    
+        assert(std::size(vc5) == std::size(target2) && std::equal(std::begin(vc5), std::end(vc5), std::begin(target2)));
+
+        //probably illegal (gcc refuses it, clang is ok):
+        //std::vector<const std::array<const int, 3>> v5{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}};  
+
+        using Ar = std::array<int,2>;
+        using Ar2 = std::array<Ar, 3>;
+        
+        std::vector<Ar2> v6{Ar2{Ar{1,2}, Ar{3,4}, Ar{5,6}}, Ar2{Ar{-1,2}, Ar{3,4}, Ar{5,6}},
+                                                         Ar2{Ar{-1,-2}, Ar{3,4}, Ar{5,6}}, Ar2{Ar{1,-2}, Ar{3,4}, Ar{5,6}}};
+
+        auto vc6 =v6;
+
+        radix_sort(v6);
+        std::sort(std::begin(vc6), std::end(vc6)); 
+        assert(std::size(vc6) == std::size(v6) && std::equal(std::begin(vc6), std::end(vc6), std::begin(v6)));  
+
+        using Tpl = std::tuple<int, double>;
+        using Ar3 = std::array<Tpl, 2>;
+        std::vector<Ar3> v7{Ar3{Tpl{}, Tpl{1,6.0}}, Ar3{Tpl{-1,7.0}, Tpl{-2,3.0}}, Ar3{Tpl{2,6.0}, Tpl{-4,6.5}}, Ar3{Tpl{3,2.0}, Tpl{1,5.5}}};
+        
+        auto vc7 = v7;
+        radix_sort(v7);
+        std::sort(std::begin(vc7), std::end(vc7)); 
+        assert(std::size(vc7) == std::size(v7) && std::equal(std::begin(vc7), std::end(vc7), std::begin(v7)));       
     }
 
     void const_testcases()
@@ -695,6 +760,7 @@ namespace testcases
 
 int main()
 {
+    testcases::magic_get_testcases();
     testcases::array_testcases();
     testcases::const_testcases();
 

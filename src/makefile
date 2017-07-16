@@ -81,13 +81,12 @@ CLANG_LINKER=-stdlib=libc++ -lc++
 GCC_LINKER=
 
 SRC=radixSortTests.cpp
+SRCPERF=radixSortPerfTests.cpp
+SRCFUZZ=radixSortFuzz.cpp
 
-ifdef SYSTEMROOT
-	EXE_NAME=radixSort
-else
-	EXE_NAME=radixSort
-endif
-
+EXE_NAME=radixSort
+EXE_NAME_PERF=radixSortPerf
+EXE_NAME_FUZZ=radixSortFuzz
 ######################################################################################################
 
 ifndef optim
@@ -143,7 +142,7 @@ GCC_ONLY=-Wuseless-cast -Wzero-as-null-pointer-constant -Wnoexcept -Wsuggest-fin
 	-Wunsafe-loop-optimizations -Wstrict-null-sentinel -Wno-error=noexcept -Wno-missing-declarations -Wno-inline -Wno-unsafe-loop-optimizations
 
 #-Wno-missing-prototypes does not work for C++ with gcc (-Wno-missing-declarations instead...)
-CLANG_COMMONS=$(COMMONS) -Weverything -fdiagnostics-color=always -Wno-c++98-compat-pedantic -Wno-error=deprecated -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-error=global-constructors -Wno-undefined-func-template -Wno-padded -Wno-error-unused-member-function $(CLANG_LINKER)
+CLANG_COMMONS=$(COMMONS) -Weverything -fdiagnostics-color=always -Wno-c++98-compat-pedantic -Wno-error=deprecated -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-error=global-constructors -Wno-undefined-func-template -Wno-padded -Wno-error-unused-member-function -Wno-missing-braces $(CLANG_LINKER)
 
 #TODO review this:
 #on windows, my clang works only with "Developer Command Prompt for VS2015" + -m32
@@ -270,8 +269,14 @@ endif
 #Clang: -fsanitize=function
 #gcc: -fvtable-verify=std
 
+ifdef SystemRoot
+	TARGET_EXT=.exe
+	INCLUDE=-IC:\boost_1_63_0
+endif
 
 OUT=-o $(EXE_NAME)$(TARGET_EXT)
+OUT_PERF=-o $(EXE_NAME_PERF)$(TARGET_EXT)
+OUT_FUZZ=-o $(EXE_NAME_FUZZ)$(TARGET_EXT)
 
 #compiler choice
 ifeq ($(compiler),gcc)
@@ -297,21 +302,22 @@ else ifeq ($(compiler),clang)
         CC=clang-tidy
         OUT=
         FLAGS=-checks=modernize*,google*,llvm*,cppcoreguidelines*,cert*,boost*,clang-analyzer*,misc*,performance*,readability*,mpi*,-clang-diagnostic-c++11-extensions,-google-readability-todo,-clang-diagnostic-missing-variable-declarations,-google-runtime-references,-readability-else-after-return,-readability-named-parameter -warnings-as-errors=*,-cert-err58-cpp,-modernize-use-auto,-static-cast-downcast,-cppcoreguidelines-pro-type-member-init,-cppcoreguidelines-pro-type-static-cast-downcast,-misc-noexcept-move-constructor,-cppcoreguidelines-pro-type-reinterpret-cast,-cppcoreguidelines-pro-bounds-array-to-pointer-decay
-
-#TODO: why was -cppcoreguidelines-pro-bounds-constant-array-index? it finds true errors!
-
 	else
 	    CC+=clang++
 	endif
 endif
 
-ifdef SystemRoot
-	TARGET_EXT=.exe
-	INCLUDE=-IC:\boost_1_63_0
-endif
+all: unit fuzz perf
 
-all:
+unit:
 	$(CC) $(OUT) $(SRC) $(FLAGS) $(INCLUDE) $(SANITIZER)
+
+#TODO are flags correct, is libFuzzer.a needed?
+fuzz:
+	$(CC) $(OUT_FUZZ) $(SRCFUZZ) $(FLAGS) $(INCLUDE) $(SANITIZER) -fsanitize-coverage=trace-pc-guard,edge -fsanitize=fuzzer
+
+perf:
+	$(CC) $(OUT_PERF) $(SRCPERF) $(FLAGS) $(INCLUDE) $(SANITIZER)
 
 #temporay
 #TODO make it clean
