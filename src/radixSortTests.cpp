@@ -4,9 +4,16 @@
 // found in the LICENSE file.
 //
 
-//cls && g++ -o radixSort radixSortTests.cpp -march=native -DNDEBUG -fno-math-errno -flto -O3 -std=c++1z -Werror -fvisibility=hidden -Wno-endif-labels -Wno-missing-field-initializers -Wno-error=effc++ -Wno-error=inline -Wno-error=aggregate-return -Wuseless-cast -Wzero-as-null-pointer-constant -Wnoexcept -Wsuggest-final-methods -Wsuggest-final-types -Wsuggest-override -Wtrampolines -Wall -Wextra -Wconversion -Wold-style-cast -Wabi -Wimport -Wmissing-format-attribute -Wmissing-noreturn -Wodr -Woverlength-strings -Wpacked -Wunreachable-code -Wvariadic-macros -Wunused-local-typedefs -Wvla -pedantic -pedantic-errors -Wfloat-equal -Wundef -Wredundant-decls -Wshadow -Wwrite-strings -Wpointer-arith -Wcast-qual -Wswitch-default -Wmissing-include-dirs -Wcast-align -Wformat-nonliteral -Wswitch-enum -Wnon-virtual-dtor -Wctor-dtor-privacy -Wsign-promo -Wsign-conversion -Wdisabled-optimization -Weffc++ -Winline -Winvalid-pch -Wstack-protector -Wmissing-declarations -Woverloaded-virtual -Wvector-operation-performance -Wlogical-op -Wno-pmf-conversions -Wunsafe-loop-optimizations -Wstrict-null-sentinel -Wno-error=noexcept -Wno-missing-declarations -Wno-inline -Wno-unsafe-loop-optimizations  -Wshift-overflow=2 -Wnull-dereference -Wduplicated-cond -Walloc-zero -Walloca  
+/*
+cls && make unit mode=release compiler=gcc
+cls && make unit mode=release compiler=clang
 
-//cls && clang++ -std=c++1z -Werror -fvisibility=hidden -Wno-endif-labels -Wno-missing-field-initializers -Wno-error=effc++ -Wno-error=inline -Wno-error=aggregate-return -Weverything -fdiagnostics-color=always -Wno-c++98-compat-pedantic -Wno-error=deprecated -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-error=global-constructors -Wno-padded radixSortTests.cpp -o radixSort -stdlib=libc++ -Wno-undefined-func-template -Wno-missing-braces
+verbose output:
+    ./radixSort -s
+
+normal output:
+    ./radixSort
+*/
 
 #include <limits>
 #include <utility>
@@ -21,180 +28,17 @@
 
 using namespace risuwwv;
 
+#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
+#include "catch.hpp"
+
 namespace testcases
 {
-
-//on compilater that don't have header detection, ignore this
-#if defined(__has_include)
-#if __has_include("boost/pfr.hpp")
-
-    struct TestStruct { // no ostream operator defined!
-        int i;
-        char c;
-        double d;
-    };
-
-    //for std::sort only, not used by radix_sort
-    bool operator<(const TestStruct& lhs, const TestStruct& rhs)
-    {
-        return boost::pfr::flat_structure_to_tuple(lhs) < boost::pfr::flat_structure_to_tuple(rhs);
-    }
-
-    //for the test only
-    bool operator==(const TestStruct& lhs, const TestStruct& rhs)
-    {
-        return boost::pfr::flat_structure_to_tuple(lhs) == boost::pfr::flat_structure_to_tuple(rhs);
-    }
-
-    void magic_get_testcases()
-    {
-        //gcc-7.1.0 does not accept the example on https://github.com/apolukhin/magic_get but we don't need as many features
-
-        std::vector<TestStruct> v{TestStruct{1,'c', 41.0}, TestStruct{-1,'c', 41.0}, TestStruct{-1,'b', 41.0}, TestStruct{1,'b', 41.0}};
-        auto vc = v;
-
-        radix_sort(v);   
-        std::sort(vc.begin(), vc.end());    
-        assert(vc.size() == v.size() && std::equal(vc.begin(), vc.end(), v.begin())); 
-
-        //pfr.hpp is so cool!!
-    }
-#endif//defined(__has_include)
-#endif//__has_include("boost/pfr.hpp")
-
-    void array_testcases()
-    {
-        std::array<int, 10> v{1,54,5,21,42,1,21,4,54,4};
-        auto vc = v;
-
-        radix_sort(v);
-        std::sort(vc.begin(), vc.end()); 
-        assert(vc.size() == v.size() && std::equal(vc.begin(), vc.end(), v.begin()));
-
-        int v2[]{31,54,5,21,42,1,21,4,54,4};
-        int vc2[10]; 
-        std::copy(std::begin(v2), std::end(v2), std::begin(vc2));
-
-        radix_sort(v2);
-        std::sort(std::begin(vc2), std::end(vc2)); 
-        assert(std::size(vc2) == std::size(v2) && std::equal(std::begin(vc2), std::end(vc2), std::begin(v2)));    
-
-        const int v3[]{-31,54,5,21,42,1,21,4,54,4};
-        int vc3[10]; 
-        std::copy(std::begin(v3), std::end(v3), std::begin(vc3));
-
-        std::vector<int> target;
-        radix_sort(v3, std::back_inserter(target));
-        std::sort(std::begin(vc3), std::end(vc3)); 
-        assert(std::size(vc3) == std::size(v3) && std::equal(std::begin(vc3), std::end(vc3), std::begin(target)));  
-
-        std::vector<std::array<int, 3>> v4{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}};  
-        auto vc4 = v4;
-
-        radix_sort(v4);
-        std::sort(std::begin(vc4), std::end(vc4));        
-        assert(std::size(vc4) == std::size(v4) && std::equal(std::begin(vc4), std::end(vc4), std::begin(v4)));    
-
-        auto res = risuwwv::details::decay_value(std::array<const int, 3>{1,2,7});
-        static_assert(std::is_same_v<decltype(res), std::array<int, 3>>);
-        assert((res == std::array<int, 3>{1,2,7}));
-
-        std::vector<std::array<const int, 3>> v5{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}}; 
-        std::vector<std::array<int, 3>> vc5; //= v5 does not work
-        std::transform(v5.begin(), v5.end(), std::back_inserter(vc5), [](const auto& elem){
-            return risuwwv::details::decay_value(elem);
-        });
-
-        std::vector<std::array<int, 3>> target2;
-
-        radix_sort(v5, std::back_inserter(target2));
-        std::sort(std::begin(vc5), std::end(vc5));        
-        assert(std::size(vc5) == std::size(target2) && std::equal(std::begin(vc5), std::end(vc5), std::begin(target2)));
-
-        //probably illegal (gcc refuses it, clang is ok):
-        //std::vector<const std::array<const int, 3>> v5{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}};  
-
-        using Ar = std::array<int,2>;
-        using Ar2 = std::array<Ar, 3>;
-        
-        std::vector<Ar2> v6{Ar2{Ar{1,2}, Ar{3,4}, Ar{5,6}}, Ar2{Ar{-1,2}, Ar{3,4}, Ar{5,6}},
-                                                         Ar2{Ar{-1,-2}, Ar{3,4}, Ar{5,6}}, Ar2{Ar{1,-2}, Ar{3,4}, Ar{5,6}}};
-
-        auto vc6 =v6;
-
-        radix_sort(v6);
-        std::sort(std::begin(vc6), std::end(vc6)); 
-        assert(std::size(vc6) == std::size(v6) && std::equal(std::begin(vc6), std::end(vc6), std::begin(v6)));  
-
-        using Tpl = std::tuple<int, double>;
-        using Ar3 = std::array<Tpl, 2>;
-        std::vector<Ar3> v7{Ar3{Tpl{}, Tpl{1,6.0}}, Ar3{Tpl{-1,7.0}, Tpl{-2,3.0}}, Ar3{Tpl{2,6.0}, Tpl{-4,6.5}}, Ar3{Tpl{3,2.0}, Tpl{1,5.5}}};
-        
-        auto vc7 = v7;
-        radix_sort(v7);
-        std::sort(std::begin(vc7), std::end(vc7)); 
-        assert(std::size(vc7) == std::size(v7) && std::equal(std::begin(vc7), std::end(vc7), std::begin(v7)));       
-    }
-
-    void const_testcases()
-    {
-        const std::vector<int> v{-1356569119, -422563130,-1352029410,395770343,1785423163,-1351687749,-559142332,-140471621,-313712167,627271371,-1604412862,763551832,440576809,1616784356,-1399382555};
-        auto vc = v;
-
-        std::vector<int> target;
-
-        radix_sort(v, std::back_inserter(target));
-        std::sort(vc.begin(), vc.end());
-
-        assert(target.size() == vc.size() && std::equal(vc.begin(), vc.end(), target.begin()));
-
-        using Tup1 =std::pair<int32_t, int16_t>;
-
-        using Tup =std::tuple<int8_t, const Tup1>;
-
-        using Targ = risuwwv::details::recursive_decay_t<Tup>;
-
-        static_assert(std::is_same_v<std::tuple<int8_t, std::pair<int32_t, int16_t>>, Targ>);
-
-        std::vector<Tup> v2{Tup{82, Tup1{-1521250841, 8261}}, Tup{-9, Tup1{-782619114, -14787}}, Tup{14, Tup1{-205344574, -31945}}, Tup{-50, Tup1{665513844, -3181}}, Tup{107, Tup1{-111254781, -20765}}, Tup{20, Tup1{1918541230, -30303}}, Tup{37, Tup1{-849382585, -14716}}, Tup{-40, Tup1{-1938031009, 12790}}, Tup{89, Tup1{-1296684139, -26121}}, Tup{-1, Tup1{-2047314039, 28625}}, Tup{61, Tup1{-895186301, -22402}}, Tup{-2, Tup1{-1382437165, 2219}}, Tup{-81, Tup1{772505587, 31694}}, Tup{7, Tup1{-30777881, 10708}}, Tup{69, Tup1{-780193668, 28050}}, Tup{126, Tup1{-1156394723, -13703}}};
-
-        std::vector<Targ> vc2{v2.begin(), v2.end()};  
-
-        std::vector<Targ> target2;      
-
-        radix_sort(v2, std::back_inserter(target2));
-        std::sort(vc2.begin(), vc2.end());
-
-        assert(target2.size() == vc2.size() && std::equal(vc2.begin(), vc2.end(), target2.begin()));
-
-        using CstTup = const std::tuple<const int8_t, int8_t>;
-        using Helper = std::tuple<const int8_t, CstTup, CstTup, const int8_t>;
-        using HellTuple = std::tuple<const int8_t, const Helper, const Helper, const int32_t>;
-
-        //don't hire me to write this type of things :)
-        std::vector<HellTuple> v3{
-                HellTuple{125, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, 245454},
-                HellTuple{125, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, -245454},
-                HellTuple{125, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, 38},
-                HellTuple{125, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, 42}};
-
-        using HellTuple2 = risuwwv::details::recursive_decay_t<HellTuple>;
-
-        std::vector<HellTuple2> vc3{v3.begin(), v3.end()};
-        std::vector<HellTuple2> target3;     
-
-        radix_sort(v3, std::back_inserter(target3));
-        std::sort(vc3.begin(), vc3.end());
-
-        assert(target3.size() == vc3.size() && std::equal(vc3.begin(), vc3.end(), target3.begin())); 
-    }
-
     //not adapted for float as comparison of NaNs is strange
-    template<typename Integer>
-    void int_testcase(const std::vector<Integer>& v)
+    template<typename Container>
+    void int_testcase(const Container& v)
     {
         auto v2 = v;
-        auto v3 = v;
+        std::vector<typename Container::value_type> v3{v.begin(), v.end()};
 
         radix_sort(v2.begin(), v2.end());
         std::sort(v3.begin(), v3.end());
@@ -210,7 +54,8 @@ namespace testcases
             std::cout << '\n';
         }*/
 
-        assert(v2.size() == v.size() && std::equal(v2.begin(), v2.end(), v3.begin()));
+        REQUIRE(v2.size() == v.size());
+        REQUIRE(std::equal(v2.begin(), v2.end(), v3.begin()));
     }
 
     template<std::size_t>
@@ -229,125 +74,144 @@ namespace testcases
         using type = float;
     };   
 
-    template<typename Integer>
-    void float_testcase(const std::vector<Integer>& v)
-    {
-        using Float = typename Float_equivalent<sizeof(Integer)>::type;
+    template<typename T, typename U>
+    struct Rebind_container
+    {};
 
-        std::vector<Float> tmp;
+    template<typename T, typename U>
+    struct Rebind_container<std::list<T>, U>
+    {
+        using type = std::list<U>;
+    };
+
+    template<typename T, typename U>
+    struct Rebind_container<std::vector<T>, U>
+    {
+        using type = std::vector<U>;
+    };
+
+    template<typename Container>
+    void float_testcase(const Container& v)
+    {
+        using Float = typename Float_equivalent<sizeof(typename Container::value_type)>::type;
+        using Cont = typename Rebind_container<Container, Float>::type;
+        Cont tmp;
         std::transform(v.begin(), v.end(), std::back_inserter(tmp), 
-            [](Integer val){
-                return details::bit_cast<Float, Integer>(val);
+            [](auto val){
+                return details::bit_cast<Float>(val);
             });
 
         auto v2 = tmp;
-        auto v3 = tmp;
+        std::vector<Float> v3{tmp.begin(), tmp.end()};
 
         radix_sort(v2.begin(), v2.end());
         std::sort(v3.begin(), v3.end());
 
-        assert(v2.size() == v.size() && 
-            std::equal(v2.begin(), v2.end(), v3.begin(), 
-                [](Float lhs, Float rhs)
-                {
-                    return details::bit_cast<Integer, Float>(lhs) == details::bit_cast<Integer, Float>(rhs);//NaNs are different than themselves
-                }));
+        REQUIRE(v2.size() == v.size());
+        REQUIRE(std::equal(v2.begin(), v2.end(), v3.begin(), 
+                    [](Float lhs, Float rhs)
+                    {   
+                        return details::bit_cast<typename Container::value_type, Float>(lhs) == details::bit_cast<typename Container::value_type, Float>(rhs);//NaNs are different than themselves
+                    }));
     }
 
+    template<typename Container>
     void int_testcases()
     {
-        int_testcase(std::vector<int>{});
-        int_testcase(std::vector<int>{42});
-        int_testcase(std::vector<int>{-1, 1});
-        int_testcase(std::vector<int>{1, 4, 2, 5, 7, 11, 33});
-        int_testcase(std::vector<int>{1, 4, 2, 5, 7, 11, 4, 33});
+        int_testcase(Container{});
+        int_testcase(Container{42});
+        int_testcase(Container{-1, 1});
+        int_testcase(Container{1, 4, 2, 5, 7, 11, 33});
+        int_testcase(Container{1, 4, 2, 5, 7, 11, 4, 33});
 
-        int_testcase(std::vector<int>{-2, -1, 0, 1});
-        int_testcase(std::vector<int>{-2, -1, 1, 0});
-        int_testcase(std::vector<int>{-2, 0, -1, 1});
-        int_testcase(std::vector<int>{-2, 0, 1, -1});
-        int_testcase(std::vector<int>{-2, 1, -1, 0});
-        int_testcase(std::vector<int>{-2, 1, 0, -1}); 
+        int_testcase(Container{-2, -1, 0, 1});
+        int_testcase(Container{-2, -1, 1, 0});
+        int_testcase(Container{-2, 0, -1, 1});
+        int_testcase(Container{-2, 0, 1, -1});
+        int_testcase(Container{-2, 1, -1, 0});
+        int_testcase(Container{-2, 1, 0, -1}); 
 
-        int_testcase(std::vector<int>{-1, -2, 0, 1});
-        int_testcase(std::vector<int>{-1, -2, 1, 0});
-        int_testcase(std::vector<int>{-1, 0, -2, 1});
-        int_testcase(std::vector<int>{-1, 0, 1, -2});
-        int_testcase(std::vector<int>{-1, 1, -2, 0});
-        int_testcase(std::vector<int>{-1, 1, 0, -2});
+        int_testcase(Container{-1, -2, 0, 1});
+        int_testcase(Container{-1, -2, 1, 0});
+        int_testcase(Container{-1, 0, -2, 1});
+        int_testcase(Container{-1, 0, 1, -2});
+        int_testcase(Container{-1, 1, -2, 0});
+        int_testcase(Container{-1, 1, 0, -2});
 
-        int_testcase(std::vector<int>{1, -2, 0, -1});
-        int_testcase(std::vector<int>{1, -2, -1, 0});
-        int_testcase(std::vector<int>{1, 0, -2, -1});
-        int_testcase(std::vector<int>{1, 0, -1, -2});
-        int_testcase(std::vector<int>{1, -1, -2, 0});
-        int_testcase(std::vector<int>{1, -1, 0, -2});
+        int_testcase(Container{1, -2, 0, -1});
+        int_testcase(Container{1, -2, -1, 0});
+        int_testcase(Container{1, 0, -2, -1});
+        int_testcase(Container{1, 0, -1, -2});
+        int_testcase(Container{1, -1, -2, 0});
+        int_testcase(Container{1, -1, 0, -2});
  
-        int_testcase(std::vector<int>{0, -2, 1, -1});
-        int_testcase(std::vector<int>{0, -2, -1, 1});
-        int_testcase(std::vector<int>{0, 1, -2, -1});
-        int_testcase(std::vector<int>{0, 1, -1, -2});
-        int_testcase(std::vector<int>{0, -1, -2, 1});
-        int_testcase(std::vector<int>{0, -1, 1, -2});  
+        int_testcase(Container{0, -2, 1, -1});
+        int_testcase(Container{0, -2, -1, 1});
+        int_testcase(Container{0, 1, -2, -1});
+        int_testcase(Container{0, 1, -1, -2});
+        int_testcase(Container{0, -1, -2, 1});
+        int_testcase(Container{0, -1, 1, -2});  
 
 
-        int_testcase(std::vector<int>{1107311617, -1893159634, -1867447344, 1696518018, -1859364552, 1866293585, -1857175229, -201478867, 615059417, -551781893, -1811319281, 874255129, 1430170732, 413573467, 1999187880, 869415287});
+        int_testcase(Container{1107311617, -1893159634, -1867447344, 1696518018, -1859364552, 1866293585, -1857175229, -201478867, 615059417, -551781893, -1811319281, 874255129, 1430170732, 413573467, 1999187880, 869415287});
 
         //randomly generated
-        int_testcase(std::vector<int>{1107311617, -1893159634, -1867447344, 1696518018, -1859364552, 1866293585, -1857175229, -201478867, 615059417, -551781893, -1811319281, 874255129, 1430170732, 413573467, 1999187880, 869415287});
-        int_testcase(std::vector<int>{197368545, 2007337319, -1941233492, 1439462150, -13195599, 2085020492, 1952337337, 162485865, 1911258710, 1196735356, 1910052146, 1532904003, 701287548, -2014383691, -1975010620});
-        int_testcase(std::vector<int>{-1091105931, 980714780, -461883954, -2102428785, -142351001, 931422523, 1447692662, -1423895154, -1074893645, -1221815884, -1052830763, 868686744, -470417128, 726370077});
-        int_testcase(std::vector<int>{1770505096, -352457978, -740775673, -1576265248, 1502969398, -1535243439, -1025727763, -875057370, -1778222821, -71724485, 339696508, 2074735987, 1625069913});  
-        int_testcase(std::vector<int>{849409494, 132417626, 293739251, 372739124, -1556161000, -1441738872, -1515758919, -1774050118, -238818846, 1392302586, 316899726, 450671406});  
-        int_testcase(std::vector<int>{-1257939017, 1356233175, -622144793, 1946033574, -1939519631, 1311490890, -514138777, 2101769146, -1746921597, 715856542, 1383346755});  
-        int_testcase(std::vector<int>{917837233, 210737018, 1615008561, 425993736, 517253458, 22164689, -1023930052, 1606450998, -515600595, 625563373});   
-        int_testcase(std::vector<int>{385000237, 2074681372, -180681061, 419983298, 423131308, -121081781, 1008043018, -428297368, -255154818});  
-        int_testcase(std::vector<int>{-1816561814, 1452941613, -233399697, -1489964821, -156929759, -1300100224, -1202667649});  
-        int_testcase(std::vector<int>{1965405046, -842296084, 412086663, -1983665198, 1954998215, -1047026477}); 
-        int_testcase(std::vector<int>{1844444501, -2074258108, 969944464, 1604763831, 2089455947});   
-        int_testcase(std::vector<int>{2148986, -1153206284, 1679375893, 870921407});   
-        int_testcase(std::vector<int>{1914201243, -1364924158, -1540640591});  
-        int_testcase(std::vector<int>{37944653, -1640951946}); 
-        int_testcase(std::vector<int>{804707415}); 
+        int_testcase(Container{1107311617, -1893159634, -1867447344, 1696518018, -1859364552, 1866293585, -1857175229, -201478867, 615059417, -551781893, -1811319281, 874255129, 1430170732, 413573467, 1999187880, 869415287});
+        int_testcase(Container{197368545, 2007337319, -1941233492, 1439462150, -13195599, 2085020492, 1952337337, 162485865, 1911258710, 1196735356, 1910052146, 1532904003, 701287548, -2014383691, -1975010620});
+        int_testcase(Container{-1091105931, 980714780, -461883954, -2102428785, -142351001, 931422523, 1447692662, -1423895154, -1074893645, -1221815884, -1052830763, 868686744, -470417128, 726370077});
+        int_testcase(Container{1770505096, -352457978, -740775673, -1576265248, 1502969398, -1535243439, -1025727763, -875057370, -1778222821, -71724485, 339696508, 2074735987, 1625069913});  
+        int_testcase(Container{849409494, 132417626, 293739251, 372739124, -1556161000, -1441738872, -1515758919, -1774050118, -238818846, 1392302586, 316899726, 450671406});  
+        int_testcase(Container{-1257939017, 1356233175, -622144793, 1946033574, -1939519631, 1311490890, -514138777, 2101769146, -1746921597, 715856542, 1383346755});  
+        int_testcase(Container{917837233, 210737018, 1615008561, 425993736, 517253458, 22164689, -1023930052, 1606450998, -515600595, 625563373});   
+        int_testcase(Container{385000237, 2074681372, -180681061, 419983298, 423131308, -121081781, 1008043018, -428297368, -255154818});  
+        int_testcase(Container{-1816561814, 1452941613, -233399697, -1489964821, -156929759, -1300100224, -1202667649});  
+        int_testcase(Container{1965405046, -842296084, 412086663, -1983665198, 1954998215, -1047026477}); 
+        int_testcase(Container{1844444501, -2074258108, 969944464, 1604763831, 2089455947});   
+        int_testcase(Container{2148986, -1153206284, 1679375893, 870921407});   
+        int_testcase(Container{1914201243, -1364924158, -1540640591});  
+        int_testcase(Container{37944653, -1640951946}); 
+        int_testcase(Container{804707415}); 
     }
 
+    template<typename Container>
     void float_testcases()
     {
-        float_testcase(std::vector<int>{-1356569119, -422563130,-1352029410,395770343,1785423163,-1351687749,-559142332,-140471621,-313712167,627271371,-1604412862,763551832,440576809,1616784356,-1399382555});
-        float_testcase(std::vector<int>{-756409216, 576595219,147352108,-1798428427,-1712713075,975949193,1993832975,-252938704,1991177445,-1301106677,-269899389,-1834975815,-724975025,-231037640});
-        float_testcase(std::vector<int>{-1762984579, 2138943090,2025148171,-1847268196,141478690,1217246495,-1368348154,368867411,-300074518,2090291135,-374625266,-1353801110,-676146797});
-        float_testcase(std::vector<int>{-1424162538, 1848244056,1424218350,1447771888,1463207589,-474639137,687737955,1249185001,1924783830,4892783,714276741,29037326});
-        float_testcase(std::vector<int>{656787732, -1520753696,-376890991,-566750050,-819460951,-1593146851,-1539908256,527113861,2050278366,-1930590320,-1730477959});
-        float_testcase(std::vector<int>{1311533457, -1701602623,-1615043135,1926204301,1613151125,2123639583,596856897,-1309083051,1247808019,2082085548});
-        float_testcase(std::vector<int>{-261132083, 1810573696,200203276,507526233,-772782763,-941885048,-1881962234,-200547304,1032601585});
-        float_testcase(std::vector<int>{1806668039, 1022441670,1843962077,1498229084,2051973048,1416630281,-714591292});
-        float_testcase(std::vector<int>{2051422467, 1544469173,1425274378,-978349883,736200424,1091127312});
-        float_testcase(std::vector<int>{-431007896, -38239707,1544022954,1241333726,276507793});
-        float_testcase(std::vector<int>{-1648888734, 641167639,1535064263,-1024681389});
-        float_testcase(std::vector<int>{-693860427, 922283682,-1699433844});
-        float_testcase(std::vector<int>{-364494615, -358968238});
-        float_testcase(std::vector<int>{1582333377});
+        float_testcase(Container{-1356569119, -422563130,-1352029410,395770343,1785423163,-1351687749,-559142332,-140471621,-313712167,627271371,-1604412862,763551832,440576809,1616784356,-1399382555});
+        float_testcase(Container{-756409216, 576595219,147352108,-1798428427,-1712713075,975949193,1993832975,-252938704,1991177445,-1301106677,-269899389,-1834975815,-724975025,-231037640});
+        float_testcase(Container{-1762984579, 2138943090,2025148171,-1847268196,141478690,1217246495,-1368348154,368867411,-300074518,2090291135,-374625266,-1353801110,-676146797});
+        float_testcase(Container{-1424162538, 1848244056,1424218350,1447771888,1463207589,-474639137,687737955,1249185001,1924783830,4892783,714276741,29037326});
+        float_testcase(Container{656787732, -1520753696,-376890991,-566750050,-819460951,-1593146851,-1539908256,527113861,2050278366,-1930590320,-1730477959});
+        float_testcase(Container{1311533457, -1701602623,-1615043135,1926204301,1613151125,2123639583,596856897,-1309083051,1247808019,2082085548});
+        float_testcase(Container{-261132083, 1810573696,200203276,507526233,-772782763,-941885048,-1881962234,-200547304,1032601585});
+        float_testcase(Container{1806668039, 1022441670,1843962077,1498229084,2051973048,1416630281,-714591292});
+        float_testcase(Container{2051422467, 1544469173,1425274378,-978349883,736200424,1091127312});
+        float_testcase(Container{-431007896, -38239707,1544022954,1241333726,276507793});
+        float_testcase(Container{-1648888734, 641167639,1535064263,-1024681389});
+        float_testcase(Container{-693860427, 922283682,-1699433844});
+        float_testcase(Container{-364494615, -358968238});
+        float_testcase(Container{1582333377});
 
         //-4194304 => -NaN,     2139095040 => +inf,     -8388608 => -inf
-        float_testcase(std::vector<int>{-4194304, 2139095040, 10, -8388608});
+        float_testcase(Container{-4194304, 2139095040, 10, -8388608});
     }
 
+    template<typename Container>
     void double_testcases()
     {
-        float_testcase(std::vector<int64_t>{5166950043776760000ll, 7703263844257170000,2514332659977400000,-1297298840733950000,946675713689387000,-6262958343371610000,4266421780913290000,-7867193517652540000,4140165466564780000,5559886280227320000,6793037895639390000,8935735603197710000,5442569018439790000,-3528310787602810000,-4754792994694770000ll});
-        float_testcase(std::vector<int64_t>{-4840378265572450000ll, -5683448907578380000,3867382446254390000,-1368176910128970000,8811186859241370000,-4884726506345330000,1910536168222220000,-2937616646326620000,-6123389781133110000,3419696032680170000,3158014692334450000,8899869691762990000,-7376362198745440000,-2769270770200850000ll});
-        float_testcase(std::vector<int64_t>{-1122384363279430000ll, 1063437150473130000,-8009679568426230000,7668716190249980000,3735606364858140000,-4437633836601420000,-8665321244732610000,5242725206840820000,-8249187708876850000,-1270127691849810000,8698352737494190000,-7965657690957460000,6869610001551930000ll});
-        float_testcase(std::vector<int64_t>{6912184291992240000ll, 7847693241451640000,-5594664454849300000,4114538621967320000,5205756254657600000,5440364566480780000,-2576782908611580000,6679979710435720000,-4914716958252740000,7065825079337440000,767513927085101000,-6615580267703610000ll});
-        float_testcase(std::vector<int64_t>{-3705509191288720000ll, 3715807706485210000,-1176926116571480000,4635621395402470000,896642397825155000,-1725674557274260000,8181227202493260000,2282973743543760000,1784035096577700000,-3020464190264830000,-3907949079620500000ll});
-        float_testcase(std::vector<int64_t>{8415380105608920000ll, -6787539332198550000,-9179102693810900000,3890578474920240000,957207317820981000,-5224773087783170000,215760488843100000,4761175008022420000,3141560240576500000,754580177384980000ll});
-        float_testcase(std::vector<int64_t>{3994802002231310000ll, 2357161368585600000,5395057946573340000,-4832132830407900000,7696140257092210000,7974258568864830000,7501435384267150000,1129590892032190000,-4329583752382970000ll});
-        float_testcase(std::vector<int64_t>{-8178864475063500000ll, -8756955706154910000,-7613244497755440000,-886507567989613000,1237569993794910000,-5605454548425590000,-8441325195437820000ll});
-        float_testcase(std::vector<int64_t>{-4122185803871470000ll, 1705734254004390000,-3845695972842240000,-3244396149482320000,860508822070378000,7084566097474750000ll});
-        float_testcase(std::vector<int64_t>{-6521306093758170000ll, 172715127444603000,-3102196878182040000,-2114567066449560000,6869221319888530000ll});
-        float_testcase(std::vector<int64_t>{-213484668751655000ll, 3109166935135240000,1189978521066320000,-5927948476301390000ll});
-        float_testcase(std::vector<int64_t>{-4147257678679450000ll, -7916472571308450000,8437581683650460000ll});
-        float_testcase(std::vector<int64_t>{-4506806257962530000ll, -8016885609234400000ll});
-        float_testcase(std::vector<int64_t>{4233127938280680000ll});
+        float_testcase(Container{5166950043776760000ll, 7703263844257170000,2514332659977400000,-1297298840733950000,946675713689387000,-6262958343371610000,4266421780913290000,-7867193517652540000,4140165466564780000,5559886280227320000,6793037895639390000,8935735603197710000,5442569018439790000,-3528310787602810000,-4754792994694770000ll});
+        float_testcase(Container{-4840378265572450000ll, -5683448907578380000,3867382446254390000,-1368176910128970000,8811186859241370000,-4884726506345330000,1910536168222220000,-2937616646326620000,-6123389781133110000,3419696032680170000,3158014692334450000,8899869691762990000,-7376362198745440000,-2769270770200850000ll});
+        float_testcase(Container{-1122384363279430000ll, 1063437150473130000,-8009679568426230000,7668716190249980000,3735606364858140000,-4437633836601420000,-8665321244732610000,5242725206840820000,-8249187708876850000,-1270127691849810000,8698352737494190000,-7965657690957460000,6869610001551930000ll});
+        float_testcase(Container{6912184291992240000ll, 7847693241451640000,-5594664454849300000,4114538621967320000,5205756254657600000,5440364566480780000,-2576782908611580000,6679979710435720000,-4914716958252740000,7065825079337440000,767513927085101000,-6615580267703610000ll});
+        float_testcase(Container{-3705509191288720000ll, 3715807706485210000,-1176926116571480000,4635621395402470000,896642397825155000,-1725674557274260000,8181227202493260000,2282973743543760000,1784035096577700000,-3020464190264830000,-3907949079620500000ll});
+        float_testcase(Container{8415380105608920000ll, -6787539332198550000,-9179102693810900000,3890578474920240000,957207317820981000,-5224773087783170000,215760488843100000,4761175008022420000,3141560240576500000,754580177384980000ll});
+        float_testcase(Container{3994802002231310000ll, 2357161368585600000,5395057946573340000,-4832132830407900000,7696140257092210000,7974258568864830000,7501435384267150000,1129590892032190000,-4329583752382970000ll});
+        float_testcase(Container{-8178864475063500000ll, -8756955706154910000,-7613244497755440000,-886507567989613000,1237569993794910000,-5605454548425590000,-8441325195437820000ll});
+        float_testcase(Container{-4122185803871470000ll, 1705734254004390000,-3845695972842240000,-3244396149482320000,860508822070378000,7084566097474750000ll});
+        float_testcase(Container{-6521306093758170000ll, 172715127444603000,-3102196878182040000,-2114567066449560000,6869221319888530000ll});
+        float_testcase(Container{-213484668751655000ll, 3109166935135240000,1189978521066320000,-5927948476301390000ll});
+        float_testcase(Container{-4147257678679450000ll, -7916472571308450000,8437581683650460000ll});
+        float_testcase(Container{-4506806257962530000ll, -8016885609234400000ll});
+        float_testcase(Container{4233127938280680000ll});
     }
 
     void tuple1_testcases()
@@ -511,23 +375,6 @@ namespace testcases
     void tuple8_testcases()
     {}
 
-    //TODO
-    //16, 8, 32
-    //16, 32, 8
-
-    //A, B, C, D in {int8_t, int16_t, int32_t, int64_t, uint8_t, uint16_t, uint32_t, uint64_t>
-    //the fuzzer determinates the A, B, C, D (16^4 = 2^16 => 16 bits code to choose the types), we test all the structures below
-
-    //tuple<A, B, C, D>
-    //tuple<A, B, C, tuple<D>>
-    //tuple<A, B, tuple<C, D>>
-    //tuple<A, tuple<B, C, D>>
-    //tuple<A, tuple<B, tuple<C, D>>>
-    //tuple<A, tuple<B, C>, D>
-    //tuple<tuple<A, B>, C, D>
-    //tuple<tuple<A, B, C>, D>
-    //tuple<tuple<A, B>, tuple<C, D>>
-
 /*
     void tuple4_testcases()
     {
@@ -583,201 +430,494 @@ namespace testcases
 
 */
 
-    void types_testcases()
-    {
-        constexpr auto value = details::radix_helper<unsigned int>{}(5);
-        static_assert(value == 5);
-
-        constexpr auto value2 = details::radix_helper<int>{}(5);
-
-        static_assert(value2 == ((1u<<31)|5u));
-
-        //constexpr 
-        auto value3 = details::radix_helper<std::tuple<int, double>>{}(std::tuple{1, 7.0});
-
-        static_assert(std::is_same_v<decltype(value3), std::tuple<unsigned int, uint64_t>>);
-        assert(std::get<0>(value3) == 2147483649 && std::get<1>(value3) == 13842939354630062080ull);
-
-        //can't be constexpr at the moment
-        auto value4 = details::radix_helper<float>{}(1.0f);  
-
-        static_assert(std::is_same_v<decltype(value4), uint32_t>);
-        assert(value4 == 3212836864);
-
-        auto value5 = details::radix_helper<std::tuple<int, std::tuple<int, double>>>{}(std::tuple{1, std::tuple{4, 7.0}});
-        auto value6 = details::flatten<decltype(value5)>{}(value5);
-
-        static_assert(std::is_same_v<decltype(value6), std::tuple<unsigned int, unsigned int, uint64_t>>);  
-        assert(std::get<0>(value6) == 2147483649 && std::get<1>(value6) == 2147483652 && std::get<2>(value6) == 13842939354630062080ull);
-
-        auto value7 = details::radix_helper<std::tuple<int, std::pair<int, double>, int>>{}(std::tuple{1, std::pair{4, 7.0}, 0});
-        auto value8 = details::flatten<decltype(value7)>{}(value7);
-
-        static_assert(std::is_same_v<decltype(value8), std::tuple<unsigned int, unsigned int, uint64_t, unsigned int>>);
-        assert(std::get<0>(value8) == 2147483649 && std::get<1>(value8) == 2147483652 && std::get<2>(value8) == 13842939354630062080ull && std::get<3>(value8) == 2147483648);
-
-        auto value9 = details::radix_helper<std::tuple<std::pair<int, double>, int, int>>{}(std::tuple{std::pair{4, 7.0}, 0, 1});
-        auto value10 = details::flatten<decltype(value9)>{}(value9);
-
-        static_assert(std::is_same_v<decltype(value10), std::tuple<unsigned int, uint64_t, unsigned int, unsigned int>>);
-        assert(std::get<0>(value10) == 2147483652 && std::get<1>(value10) == 13842939354630062080ull && std::get<2>(value10) == 2147483648 && std::get<3>(value10) == 2147483649);
-
-        auto value11 = details::flatten<int>{}(0);
-        static_assert(std::is_same_v<decltype(value11), std::tuple<int>>);
-
-        static_assert(details::buckets_count<8, int>{}() == 4);
-        static_assert(details::buckets_count<11, int>{}() == 3);
-        static_assert(details::buckets_count<8, std::tuple<int, uint64_t>>{}() == 12);
-        static_assert(details::buckets_count<8, std::pair<int, int>>{}() == 8);
-    }
-
-    void general_testcases()
-    {
-        std::vector<int> v{-1356569119, -422563130,-1352029410,395770343,1785423163,-1351687749,-559142332,-140471621,-313712167,627271371,-1604412862,763551832,440576809,1616784356,-1399382555};
-        auto vc = v;
- 
-        auto funct = [](int i)
-                        {
-                            //signed overflow is undefined behaviour...
-                            int64_t tmp = i-5;
-                            tmp *= tmp;
-
-                            constexpr int64_t mini{std::numeric_limits<int32_t>::min()};
-                            constexpr int64_t maxi{std::numeric_limits<int32_t>::max()}; 
-
-                            return static_cast<int>(std::min(maxi, std::max(mini, tmp)));
-                        };
-
-        radix_sort(v, 
-            funct);
-   
-        std::sort(vc.begin(), vc.end(), 
-            [&funct](int lhs, int rhs)
-            {
-                return funct(lhs) < funct(rhs);
-            });
-
-        assert(std::equal(v.begin(), v.end(), vc.begin()));
-
-        std::vector<float> v2{1.f, 4.f, 2.f, 5.f, 7.f, 11.f, 4.f, 33.f};
-        auto vc2 = v2;
-
-        radix_sort(v2);
-        std::sort(vc2.begin(), vc2.end());
-
-        assert(std::equal(v2.begin(), v2.end(), vc2.begin()));
-
-        //TODO: make compiler=clang sanitize=msan is not happy
-        struct Test{
-            int key_;
-            std::string val_;
-        };
-
-        std::list<Test> l{{7, "a"}, {1, "b"}, {3, "c"}, {2, "ff"}};
-        auto lc = l;
-
-        radix_sort(l, 
-            [](const Test& t)
-            {
-                return t.key_;
-            });
-
-        lc.sort(
-            [](const Test& lhs, const Test& rhs)
-            {
-                return lhs.key_ < rhs.key_;
-            });
-
-        assert(std::equal(lc.begin(), lc.end(), l.begin(), 
-            [](const Test& lhs, const Test& rhs)
-            {
-                return lhs.key_ == rhs.key_;   
-            }));
- 
-        std::list<int> l2;
-        std::vector<int> v4{1, -4, 2, 5, 7, 11, 4, -33};
-        auto vc4 = v4;
-
-        radix_sort(v4, std::back_inserter(l2));
-        std::sort(vc4.begin(), vc4.end());
-
-        assert(std::equal(l2.begin(), l2.end(), vc4.begin()));
-
-        std::vector v5{std::tuple(10, 2.0), std::tuple(3, 5.0), std::tuple(3, 2.0), std::tuple(11, 3.0)};
-        auto vc5 = v5;
-
-        radix_sort(v5);
-        std::sort(vc5.begin(), vc5.end());
-
-        assert(std::equal(v5.begin(), v5.end(), vc5.begin()));
-
-        std::vector v6{std::tuple(10, std::tuple(4, 2.0)), std::tuple(3, std::tuple(5,5.0)), std::tuple(3, std::tuple(9, 2.0)), std::tuple(11, std::tuple(33,3.0))};
-        auto vc6 = v6;
-
-        radix_sort(v6);
-        std::sort(vc6.begin(), vc6.end());
-
-        assert(std::equal(v6.begin(), v6.end(), vc6.begin()));
-
-        struct notDefaultConstr
-        {
-            explicit notDefaultConstr(int val): val_(val){}
-
-            bool operator<(const notDefaultConstr& other) const
-            {
-                return val_ < other.val_;
-            }
-
-            bool operator==(const notDefaultConstr& other) const
-            {
-                return val_ == other.val_;
-            }
-
-            int val_;
-        };
-
-        std::vector<notDefaultConstr> v7{notDefaultConstr{1},notDefaultConstr{2},notDefaultConstr{3},notDefaultConstr{4}};
-        auto vc7 = v7;
-
-        radix_sort(v7, [](const notDefaultConstr& elem)
-            {
-                return elem.val_;
-            });
-
-        std::sort(vc7.begin(), vc7.end());
-
-        assert(std::equal(v7.begin(), v7.end(), vc7.begin()));
-
-        std::tuple<std::tuple<uint8_t, uint8_t>, uint8_t, uint8_t> val1;
-        static_assert(std::is_same_v<decltype(risuwwv::details::tail(val1)),  std::tuple<uint8_t, uint8_t>>);
-
-        std::tuple<std::tuple<uint8_t, uint8_t>, std::tuple<uint8_t, uint8_t>> val2;
-        static_assert(std::is_same_v<decltype(risuwwv::details::tail(val2)),  std::tuple<std::tuple<uint8_t, uint8_t>>>);
-
-    }
-
 }//end of namespace testcases
 
-int main()
+//on compilater that don't have header detection, ignore this
+#if defined(__has_include)
+#if __has_include("boost/pfr.hpp")
+
+    struct TestStruct { // no ostream operator defined!
+        int i;
+        char c;
+        double d;
+    };
+
+    //for std::sort only, not used by radix_sort
+    bool operator<(const TestStruct& lhs, const TestStruct& rhs)
+    {
+        return boost::pfr::flat_structure_to_tuple(lhs) < boost::pfr::flat_structure_to_tuple(rhs);
+    }
+
+    //for the test only
+    bool operator==(const TestStruct& lhs, const TestStruct& rhs)
+    {
+        return boost::pfr::flat_structure_to_tuple(lhs) == boost::pfr::flat_structure_to_tuple(rhs);
+    }
+
+    TEST_CASE("magic_get tests") 
+    {
+        //gcc-7.1.0 does not accept the example on https://github.com/apolukhin/magic_get but we don't need as many features
+
+        std::vector<TestStruct> v{TestStruct{1,'c', 41.0}, TestStruct{-1,'c', 41.0}, TestStruct{-1,'b', 41.0}, TestStruct{1,'b', 41.0}};
+        auto vc = v;
+
+        radix_sort(v);   
+        std::sort(vc.begin(), vc.end());    
+        REQUIRE(vc.size() == v.size());
+        REQUIRE(std::equal(vc.begin(), vc.end(), v.begin())); 
+
+        //pfr.hpp is so cool!!
+    }
+
+#endif//defined(__has_include)
+#endif//__has_include("boost/pfr.hpp")
+
+TEST_CASE("array tests") 
 {
-    testcases::magic_get_testcases();
-    testcases::array_testcases();
-    testcases::const_testcases();
+    std::array<int, 10> v{1,54,5,21,42,1,21,4,54,4};
+    auto vc = v;
 
-    testcases::tuple1_testcases();
-    testcases::tuple2_testcases();
-    testcases::tuple3_testcases();  
-    testcases::tuple4_testcases(); 
-    testcases::tuple5_testcases();
-    testcases::tuple6_testcases();
-    testcases::tuple7_testcases();  
-    testcases::tuple8_testcases();
+    radix_sort(v);
+    std::sort(vc.begin(), vc.end()); 
+    REQUIRE(vc.size() == v.size());
+    REQUIRE(std::equal(vc.begin(), vc.end(), v.begin()));
 
-    testcases::int_testcases();
-    testcases::float_testcases();
-    testcases::double_testcases();
-    testcases::general_testcases();
-    testcases::types_testcases();
+    int v2[]{31,54,5,21,42,1,21,4,54,4};
+    int vc2[10]; 
+    std::copy(std::begin(v2), std::end(v2), std::begin(vc2));
 
-    std::cout << "All tests are ok\n";
+    radix_sort(v2);
+    std::sort(std::begin(vc2), std::end(vc2)); 
+    REQUIRE(std::size(vc2) == std::size(v2));
+    REQUIRE(std::equal(std::begin(vc2), std::end(vc2), std::begin(v2)));    
+
+    const int v3[]{-31,54,5,21,42,1,21,4,54,4};
+    int vc3[10]; 
+    std::copy(std::begin(v3), std::end(v3), std::begin(vc3));
+
+    std::vector<int> target;
+    radix_sort(v3, std::back_inserter(target));
+    std::sort(std::begin(vc3), std::end(vc3)); 
+    REQUIRE(std::size(vc3) == std::size(v3));
+    REQUIRE(std::equal(std::begin(vc3), std::end(vc3), std::begin(target)));  
+
+    std::vector<std::array<int, 3>> v4{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}};  
+    auto vc4 = v4;
+
+    radix_sort(v4);
+    std::sort(std::begin(vc4), std::end(vc4));        
+    REQUIRE(std::size(vc4) == std::size(v4));
+    REQUIRE(std::equal(std::begin(vc4), std::end(vc4), std::begin(v4)));    
+
+    auto res = risuwwv::details::decay_value(std::array<const int, 3>{1,2,7});
+    static_assert(std::is_same_v<decltype(res), std::array<int, 3>>);
+    REQUIRE((res == std::array<int, 3>{1,2,7}));
+
+    std::vector<std::array<const int, 3>> v5{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}}; 
+    std::vector<std::array<int, 3>> vc5; //= v5 does not work
+    std::transform(v5.begin(), v5.end(), std::back_inserter(vc5), [](const auto& elem){
+        return risuwwv::details::decay_value(elem);
+    });
+
+    std::vector<std::array<int, 3>> target2;
+
+    radix_sort(v5, std::back_inserter(target2));
+    std::sort(std::begin(vc5), std::end(vc5));        
+    REQUIRE(std::size(vc5) == std::size(target2));
+    REQUIRE(std::equal(std::begin(vc5), std::end(vc5), std::begin(target2)));
+
+    //probably illegal (gcc refuses it, clang is ok):
+    //std::vector<const std::array<const int, 3>> v5{{1,2,7},{-1,3,4},{1,2,8},{-1,4,3}};  
+
+    using Ar = std::array<int,2>;
+    using Ar2 = std::array<Ar, 3>;
+
+    std::vector<Ar2> v6{Ar2{Ar{1,2}, Ar{3,4}, Ar{5,6}}, Ar2{Ar{-1,2}, Ar{3,4}, Ar{5,6}},
+                                                     Ar2{Ar{-1,-2}, Ar{3,4}, Ar{5,6}}, Ar2{Ar{1,-2}, Ar{3,4}, Ar{5,6}}};
+
+    auto vc6 =v6;
+
+    radix_sort(v6);
+    std::sort(std::begin(vc6), std::end(vc6)); 
+    REQUIRE(std::size(vc6) == std::size(v6));
+    REQUIRE(std::equal(std::begin(vc6), std::end(vc6), std::begin(v6)));  
+
+    using Tpl = std::tuple<int, double>;
+    using Ar3 = std::array<Tpl, 2>;
+    std::vector<Ar3> v7{Ar3{Tpl{}, Tpl{1,6.0}}, Ar3{Tpl{-1,7.0}, Tpl{-2,3.0}}, Ar3{Tpl{2,6.0}, Tpl{-4,6.5}}, Ar3{Tpl{3,2.0}, Tpl{1,5.5}}};
+
+    auto vc7 = v7;
+    radix_sort(v7);
+    std::sort(std::begin(vc7), std::end(vc7)); 
+    REQUIRE(std::size(vc7) == std::size(v7));
+    REQUIRE(std::equal(std::begin(vc7), std::end(vc7), std::begin(v7)));  
 }
+
+TEST_CASE("const tests") 
+{
+    const std::vector<int> v{-1356569119, -422563130,-1352029410,395770343,1785423163,-1351687749,-559142332,-140471621,-313712167,627271371,-1604412862,763551832,440576809,1616784356,-1399382555};
+    auto vc = v;
+
+    std::vector<int> target;
+
+    radix_sort(v, std::back_inserter(target));
+    std::sort(vc.begin(), vc.end());
+
+    REQUIRE(target.size() == vc.size());
+    REQUIRE(std::equal(vc.begin(), vc.end(), target.begin()));
+
+    using Tup1 =std::pair<int32_t, int16_t>;
+
+    using Tup =std::tuple<int8_t, const Tup1>;
+
+    using Targ = risuwwv::details::recursive_decay_t<Tup>;
+
+    static_assert(std::is_same_v<std::tuple<int8_t, std::pair<int32_t, int16_t>>, Targ>);
+
+    std::vector<Tup> v2{Tup{82, Tup1{-1521250841, 8261}}, Tup{-9, Tup1{-782619114, -14787}}, Tup{14, Tup1{-205344574, -31945}}, Tup{-50, Tup1{665513844, -3181}}, Tup{107, Tup1{-111254781, -20765}}, Tup{20, Tup1{1918541230, -30303}}, Tup{37, Tup1{-849382585, -14716}}, Tup{-40, Tup1{-1938031009, 12790}}, Tup{89, Tup1{-1296684139, -26121}}, Tup{-1, Tup1{-2047314039, 28625}}, Tup{61, Tup1{-895186301, -22402}}, Tup{-2, Tup1{-1382437165, 2219}}, Tup{-81, Tup1{772505587, 31694}}, Tup{7, Tup1{-30777881, 10708}}, Tup{69, Tup1{-780193668, 28050}}, Tup{126, Tup1{-1156394723, -13703}}};
+
+    std::vector<Targ> vc2{v2.begin(), v2.end()};  
+
+    std::vector<Targ> target2;      
+
+    radix_sort(v2, std::back_inserter(target2));
+    std::sort(vc2.begin(), vc2.end());
+
+    REQUIRE(target2.size() == vc2.size());
+    REQUIRE(std::equal(vc2.begin(), vc2.end(), target2.begin()));
+
+    using CstTup = const std::tuple<const int8_t, int8_t>;
+    using Helper = std::tuple<const int8_t, CstTup, CstTup, const int8_t>;
+    using HellTuple = std::tuple<const int8_t, const Helper, const Helper, const int32_t>;
+
+    //don't hire me to write this type of things :)
+    std::vector<HellTuple> v3{
+            HellTuple{125, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, 245454},
+            HellTuple{125, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, -245454},
+            HellTuple{125, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, 38},
+            HellTuple{125, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, Helper{253, CstTup{254,125}, CstTup{-121,137}, 27}, 42}};
+
+    using HellTuple2 = risuwwv::details::recursive_decay_t<HellTuple>;
+
+    std::vector<HellTuple2> vc3{v3.begin(), v3.end()};
+    std::vector<HellTuple2> target3;     
+
+    radix_sort(v3, std::back_inserter(target3));
+    std::sort(vc3.begin(), vc3.end());
+
+    REQUIRE(target3.size() == vc3.size());
+    REQUIRE(std::equal(vc3.begin(), vc3.end(), target3.begin())); 
+}
+
+TEST_CASE("tuple1 tests") 
+{
+    testcases::tuple1_testcases();
+}
+
+TEST_CASE("tuple2 tests") 
+{
+    testcases::tuple2_testcases();
+}
+
+TEST_CASE("tuple3 tests") 
+{
+    testcases::tuple3_testcases(); 
+}
+
+TEST_CASE("tuple4 tests") 
+{
+    testcases::tuple4_testcases(); 
+}
+
+TEST_CASE("tuple5 tests") 
+{
+    testcases::tuple5_testcases();
+}
+
+TEST_CASE("tuple6 tests") 
+{
+    testcases::tuple6_testcases();
+}
+
+TEST_CASE("tuple7 tests") 
+{
+    testcases::tuple7_testcases(); 
+}
+
+TEST_CASE("tuple8 tests") 
+{
+    testcases::tuple8_testcases();
+}
+
+TEST_CASE("vector<int> tests") 
+{
+    testcases::int_testcases<std::vector<int>>();
+}
+
+TEST_CASE("list<int> tests") 
+{
+    testcases::int_testcases<std::list<int>>();
+}
+
+TEST_CASE("vector<float> tests") 
+{
+    testcases::float_testcases<std::vector<int>>();
+}
+
+TEST_CASE("list<float> tests") 
+{
+    testcases::float_testcases<std::list<int>>();
+}
+
+TEST_CASE("vector<double> tests") 
+{
+    testcases::double_testcases<std::vector<int64_t>>();
+}
+
+TEST_CASE("list<double> tests") 
+{
+    testcases::double_testcases<std::list<int64_t>>();
+}
+
+TEST_CASE("general test 1") 
+{
+    std::vector<int> v{-1356569119, -422563130,-1352029410,395770343,1785423163,-1351687749,-559142332,-140471621,-313712167,627271371,-1604412862,763551832,440576809,1616784356,-1399382555};
+    auto vc = v;
+
+    auto funct = [](int i)
+                    {
+                        //signed overflow is undefined behaviour...
+                        int64_t tmp = i-5;
+                        tmp *= tmp;
+
+                        constexpr int64_t mini{std::numeric_limits<int32_t>::min()};
+                        constexpr int64_t maxi{std::numeric_limits<int32_t>::max()}; 
+
+                        return static_cast<int>(std::min(maxi, std::max(mini, tmp)));
+                    };
+
+    radix_sort(v, 
+        funct);
+
+    std::sort(vc.begin(), vc.end(), 
+        [&funct](int lhs, int rhs)
+        {
+            return funct(lhs) < funct(rhs);
+        });
+
+    REQUIRE(std::equal(v.begin(), v.end(), vc.begin()));
+}
+
+TEST_CASE("general test 2") 
+{
+    std::vector<float> v2{1.f, 4.f, 2.f, 5.f, 7.f, 11.f, 4.f, 33.f};
+    auto vc2 = v2;
+
+    radix_sort(v2);
+    std::sort(vc2.begin(), vc2.end());
+
+    REQUIRE(std::equal(v2.begin(), v2.end(), vc2.begin()));
+}
+
+TEST_CASE("general test 3") 
+{
+    struct Test{
+        int key_;
+        std::string val_;
+    };
+
+    std::list<Test> l{{7, "a"}, {1, "b"}, {3, "c"}, {2, "ff"}};
+    auto lc = l;
+
+    radix_sort(l, 
+        [](const Test& t)
+        {
+            return t.key_;
+        });
+
+    lc.sort(
+        [](const Test& lhs, const Test& rhs)
+        {
+            return lhs.key_ < rhs.key_;
+        });
+
+    REQUIRE(std::equal(lc.begin(), lc.end(), l.begin(), 
+        [](const Test& lhs, const Test& rhs)
+        {
+            return lhs.key_ == rhs.key_;   
+        }));
+}
+
+TEST_CASE("general test 4") 
+{
+    std::list<int> l2;
+    std::vector<int> v4{1, -4, 2, 5, 7, 11, 4, -33};
+    auto vc4 = v4;
+
+    radix_sort(v4, std::back_inserter(l2));
+    std::sort(vc4.begin(), vc4.end());
+
+    REQUIRE(std::equal(l2.begin(), l2.end(), vc4.begin()));
+}
+
+TEST_CASE("general test 5") 
+{
+    std::vector v5{std::tuple(10, 2.0), std::tuple(3, 5.0), std::tuple(3, 2.0), std::tuple(11, 3.0)};
+    auto vc5 = v5;
+
+    radix_sort(v5);
+    std::sort(vc5.begin(), vc5.end());
+
+    REQUIRE(std::equal(v5.begin(), v5.end(), vc5.begin()));
+}
+
+TEST_CASE("simple tuple test") 
+{
+    std::vector v6{std::tuple(10, std::tuple(4, 2.0)), std::tuple(3, std::tuple(5,5.0)), std::tuple(3, std::tuple(9, 2.0)), std::tuple(11, std::tuple(33,3.0))};
+    auto vc6 = v6;
+
+    radix_sort(v6);
+    std::sort(vc6.begin(), vc6.end());
+
+    REQUIRE(std::equal(v6.begin(), v6.end(), vc6.begin()));
+}
+
+TEST_CASE("not-default-constructible type test") 
+{
+    struct notDefaultConstr
+    {
+        explicit notDefaultConstr(int val): val_(val){}
+
+        bool operator<(const notDefaultConstr& other) const
+        {
+            return val_ < other.val_;
+        }
+
+        bool operator==(const notDefaultConstr& other) const
+        {
+            return val_ == other.val_;
+        }
+
+        int val_;
+    };
+
+    std::vector<notDefaultConstr> v7{notDefaultConstr{1},notDefaultConstr{2},notDefaultConstr{3},notDefaultConstr{4}};
+    auto vc7 = v7;
+
+    radix_sort(v7, [](const notDefaultConstr& elem)
+        {
+            return elem.val_;
+        });
+
+    std::sort(vc7.begin(), vc7.end());
+
+    REQUIRE(std::equal(v7.begin(), v7.end(), vc7.begin()));
+}
+
+TEST_CASE("stability test") 
+{
+    std::tuple<std::tuple<uint8_t, uint8_t>, uint8_t, uint8_t> val1;
+    static_assert(std::is_same_v<decltype(risuwwv::details::tail(val1)),  std::tuple<uint8_t, uint8_t>>);
+
+    std::tuple<std::tuple<uint8_t, uint8_t>, std::tuple<uint8_t, uint8_t>> val2;
+    static_assert(std::is_same_v<decltype(risuwwv::details::tail(val2)),  std::tuple<std::tuple<uint8_t, uint8_t>>>);
+
+    std::vector<double> v8{2.01, 2.69, 1.38, 1.97, 1.8, 1.7, 2.87, 1.19, 2.34, 1.38, 1.69, 2.63, 2.67, 1.13, 1.61, 1.5, 2.69, 2.67, 2.13, 1.56, 2.64, 1.9, 2.22, 2.32, 2.4, 2.49, 1.42, 2.3, 1.67, 2.66, 2.5, 1.87, 2.28, 2.79, 2.18, 1.23, 1.41, 2.32, 1.86, 1.14, 1.23, 2.31, 2.55, 2.67, 1.5, 1.93, 2.3, 1.33, 2.46, 1.89, 1.98, 2.64, 2.73, 1.37, 1.98, 1.6, 2.85, 2.24, 1.45, 1.11, 2.81, 1.46, 2.5, 2.12, 1.19, 2.64, 1.87, 1.33, 2.52, 2.8, 2.25, 1.88, 1.96, 2.27, 2.15, 1.9, 2.89, 1.67, 2.08, 2.11, 1.67, 2.56, 2.56, 1.19, 1.99, 1.44, 2.61, 1.38, 1.83, 1.79, 1.26, 2.72, 2.83, 1.58, 2.65, 1.66, 1.95, 1.61, 2.31, 1.36, 2.44, 2.05, 2.03, 2.53, 2.79, 1.33, 2.09, 1.26, 2.89, 2.55, 1.27, 2.58, 2.63, 2.11, 1.9, 2.25, 1.78, 1.32, 2.8, 2.78};
+
+    auto vc8 = v8;
+
+    radix_sort(v8, 
+        [](double t)
+        {
+            return static_cast<int>(t);
+        });
+
+    //example would break if std::sort was used: it is not stable.
+    std::stable_sort(vc8.begin(), vc8.end(),
+        [](double lhs, double rhs)
+        {
+            return static_cast<int>(lhs) < static_cast<int>(rhs);
+        });
+        
+    REQUIRE(std::equal(v8.begin(), v8.end(), vc8.begin()));
+}
+
+TEST_CASE("type test 1") 
+{
+    constexpr auto value = details::radix_helper<unsigned int>{}(5);
+    static_assert(value == 5);
+
+    constexpr auto value2 = details::radix_helper<int>{}(5);
+
+    static_assert(value2 == ((1u<<31)|5u));
+
+    //constexpr 
+    auto value3 = details::radix_helper<std::tuple<int, double>>{}(std::tuple{1, 7.0});
+
+    static_assert(std::is_same_v<decltype(value3), std::tuple<unsigned int, uint64_t>>);
+    REQUIRE(std::get<0>(value3) == 2147483649);
+    REQUIRE(std::get<1>(value3) == 13842939354630062080ull);
+}
+
+TEST_CASE("type test 2") 
+{
+    //can't be constexpr at the moment
+    auto value4 = details::radix_helper<float>{}(1.0f);  
+
+    static_assert(std::is_same_v<decltype(value4), uint32_t>);
+    REQUIRE(value4 == 3212836864);
+}
+
+TEST_CASE("type test 3") 
+{
+    auto value5 = details::radix_helper<std::tuple<int, std::tuple<int, double>>>{}(std::tuple{1, std::tuple{4, 7.0}});
+    auto value6 = details::flatten<decltype(value5)>{}(value5);
+
+    static_assert(std::is_same_v<decltype(value6), std::tuple<unsigned int, unsigned int, uint64_t>>);  
+    REQUIRE(std::get<0>(value6) == 2147483649);
+    REQUIRE(std::get<1>(value6) == 2147483652);
+    REQUIRE(std::get<2>(value6) == 13842939354630062080ull);
+}
+
+TEST_CASE("type test 4") 
+{
+    auto value7 = details::radix_helper<std::tuple<int, std::pair<int, double>, int>>{}(std::tuple{1, std::pair{4, 7.0}, 0});
+    auto value8 = details::flatten<decltype(value7)>{}(value7);
+
+    static_assert(std::is_same_v<decltype(value8), std::tuple<unsigned int, unsigned int, uint64_t, unsigned int>>);
+    REQUIRE(std::get<0>(value8) == 2147483649);
+    REQUIRE(std::get<1>(value8) == 2147483652);
+    REQUIRE(std::get<2>(value8) == 13842939354630062080ull);
+    REQUIRE(std::get<3>(value8) == 2147483648);
+}
+
+TEST_CASE("type test 5") 
+{
+    auto value9 = details::radix_helper<std::tuple<std::pair<int, double>, int, int>>{}(std::tuple{std::pair{4, 7.0}, 0, 1});
+    auto value10 = details::flatten<decltype(value9)>{}(value9);
+
+    static_assert(std::is_same_v<decltype(value10), std::tuple<unsigned int, uint64_t, unsigned int, unsigned int>>);
+    REQUIRE(std::get<0>(value10) == 2147483652);
+    REQUIRE(std::get<1>(value10) == 13842939354630062080ull);
+    REQUIRE(std::get<2>(value10) == 2147483648);
+    REQUIRE(std::get<3>(value10) == 2147483649);
+
+    auto value11 = details::flatten<int>{}(0);
+    static_assert(std::is_same_v<decltype(value11), std::tuple<int>>);
+}
+
+TEST_CASE("static_assert test") 
+{
+#if __GNUC__
+    static_assert(std::is_unsigned_v<__uint128_t>);
+    static_assert(std::is_integral_v<__uint128_t>);
+    static_assert(std::is_integral_v<__int128_t>);
+    static_assert(!std::is_unsigned_v<__int128_t>);
+#endif//__GNUC__
+
+    static_assert(details::buckets_count<8, int>{}() == 4);
+    static_assert(details::buckets_count<11, int>{}() == 3);
+    static_assert(details::buckets_count<8, std::tuple<int, uint64_t>>{}() == 12);
+    static_assert(details::buckets_count<8, std::pair<int, int>>{}() == 8);
+}
+

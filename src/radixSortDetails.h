@@ -144,8 +144,6 @@ namespace risuwwv
             return radix_helper<T>{}(val);
         }
 
-        //TODO val or const& val?
-
         template<typename T>
         struct radix_helper<T, std::enable_if_t<std::is_unsigned_v<T>>>
         {
@@ -165,7 +163,7 @@ namespace risuwwv
             }
         };    
         
-        //TODO: can't be constexpr at the moment
+        //can't be constexpr at the moment
 	    template<typename DstType, typename SrcType>
 	    //constexpr
 	    DstType bit_cast(SrcType src)
@@ -181,7 +179,6 @@ namespace risuwwv
         struct radix_helper<float>
         {
             //inspred by http://stereopsis.com/radix.html
-            //constexpr 
             uint32_t operator()(float val)
             {
                 auto f = bit_cast<uint32_t>(val);
@@ -192,11 +189,10 @@ namespace risuwwv
         template<>
         struct radix_helper<double>
         {
-            //constexpr 
             uint64_t operator()(double val)
             {
                 auto f = bit_cast<uint64_t>(val);
-                return f ^ uint64_t(-int64_t(f>>63)|int64_t(1ul << 63));
+                return f ^ uint64_t(-int64_t(f>>63)|int64_t(1ull << 63));
             }        
         };  
         
@@ -204,7 +200,6 @@ namespace risuwwv
         template<>
         struct radix_helper<__float128>
         {
-            //constexpr 
             __uint128_t operator()(__float128 val)
             {
                 auto f = bit_cast<__uint128_t>(val);
@@ -326,16 +321,7 @@ namespace risuwwv
                 return buckets_count<bitPerBucket, T>{}() + buckets_count<bitPerBucket, U>{}();
             }        
         };
-        
-        /*template<size_t bitPerBucket, typename T, typename U>
-        struct buckets_count<bitPerBucket, const std::pair<T, U>>//TODO is this needed: we use it only on tuple or plain types right? what about tuple of tuple inputs?
-        {
-            constexpr size_t operator()()
-            {
-                return buckets_count<bitPerBucket, T>{}() + buckets_count<bitPerBucket, U>{}();
-            }        
-        };*/  
-
+      
         template<typename T, typename U>
         struct flatten_helper
         {

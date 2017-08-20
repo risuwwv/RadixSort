@@ -319,6 +319,14 @@ fuzz:
 perf:
 	$(CC) $(OUT_PERF) $(SRCPERF) $(FLAGS) $(INCLUDE) $(SANITIZER)
 
+clean:	
+	rm -f radixSort
+	rm -f radixSortFuzz
+	rm -f radixSortPerf
+	rm -f radixSort.exe
+	rm -f radixSortFuzz.exe
+	rm -f radixSortPerf.exe
+	
 #temporay
 #TODO make it clean
 #run 'make sanitize=clang-tidy compiler=clang test'

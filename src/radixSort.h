@@ -7,16 +7,64 @@
 #ifndef RADIX_SORT_H
 #define RADIX_SORT_H
 
-//TODO cover it (all sizes: 8, 16, 24, 32, 58, 64, 70 + complex nested tuples + some testcases with list and const lists and list of tuple<const int>...)
-//TODO fuzz it
-//TODO static analysis
 //TODO optimize:
 //  user should be able to pass temporary random access containers (by iterator) instead of always allocting them
 //  if the source and dst are of compatible type (no Funct), we should modify them instead of forming (key, value)  (ie key = transformed value, value is implicit and we revert key at the end)
 //  transform in place when possible (random access + not const + POD)
 //  don't swap tmp/tmp2, ...
 
-//TODO relax constraints on tuple/pair in first phase: Duck typing!
+//TODO: using a type based on end-begin instead of size_t does not seam to improve performances, try with just two: size_t or uint32_t if <= 2^32 elements (std::array<size_t, (1<<bitPerBucket)>). Did not try with big elements yet
+
+//TODO: in tmp2.push_back(keyValuePair), we can use default constructor if available (nice for expensive to copy items) 
+
+//TODO: add http://www.boost.org/doc/libs/1_64_0/libs/sort/doc/html/index.html to the comparisons
+//TODO: pairs of uint64_t to see why uint128 is so slow
+//TODO: check with 8bits, 11bits, 14bits and 15bits
+//TODO: same perf test with gcc
+//TODO: enforce the speedups in a statically sound way (average and variance within bounds) to prevent regressions
+//TODO: colors on speedup
+//TODO: small container optimization: stack allocation
+//TODO: push back to github
+
+//TODO: make compiler=clang sanitize=msan is not happy with unit
+
+/*
+DONE:
+-use CATCH or another lib for unit tests
+
+TODOs:
+-why no (begin, end, outIt) without functor
+-f below is not clear, call it keyExtractor or something or radixKey
+-static asserts may be separated from runtime tests to make it easier to read
+-document that the sort is stable as tested by the stability test
+-cover it (all sizes: 8, 16, 24, 32, 58, 64, 70 + complex nested tuples + some testcases with list and const lists and list of tuple<const int>...
+-Unit tests should include at least one example of more than 256 elements and more than 65536 ones
+-float/double/float128 random values used in the perf test should be from uniform int distrib (current version has upper bits always identical...), probably ignoring NaNs for simplicity
+-When possible, should use an implem where only key is used, not key/value as it is smaller. Drawback: need reverse transform at the end, types are differents than now and works only if key extractor is identity or at least reversible.
+-find which bucket size works better depending on the input type: 8 to 15 bits radix?
+-can prefetching help? Seams complicated as it is generic code
+-more unit tests should be generic so they work on list too
+-unit test of sorting from a file (written by the test to be clean?) directly and from a input iterator
+-is it faster to sort uint128_t or <uint64_t, uint64_t>
+-when possible, exploit the input or/and the output as tmp instead of allocating
+-when possible, use stack allocation instead of tmp vectors
+-simple case should minimize copies: transform input into itself or tmp, do radix sorting passes, last radix + untransform into input or output
+-allocator for tmps and/or user passed temporary buffer...
+-std::string can be worked on in the following way: radix_sort them by size, shorter first. Than radix sort per last radix only on the subset of maximal length strings, searching bounds linearly,
+iterate: second least significant radix on string having it, ... (string that don't have counts as \0\0\0 so have to come first, which they already do because we sorted by length!)
+-the problem with std::string is that it needs specific code for every string field in the flatten tuple
+-it may be possible to group small fields to exploit bigger radix: tuple<char, char, char, char> needs one pass per char while uint64_t may do better with a bigger radix
+-small arrays are probably better sorted by insertion sort like std::sort do, find the bound for various types.
+-Msvc compilation
+-for large objects, doing all the prefix sums in one pass is probably bad
+-sizeof(T) is an upper bound for radix base: 11 bits is useless for uint8_t sort
+-sorting <key, it> can be an idea too
+-take an allocator for the needed memory
+-write proper documentation
+-bit_cast can't be constexpr at the moment
+-constexpr all that can be
+-static analysis
+*/
 
 #include <iterator>
 #include <algorithm>
@@ -36,11 +84,6 @@ namespace risuwwv
             return;    
         }
         
-        //I see 3 possibilities: 
-        //- calling radix_helper(f(...)) every time it is needed
-        //- filling a vector of pair<transformed key, object> //what is done below
-        //- filling a vector of pair<transformed key, It>   //"It" needs to be at least a forward iterator
-     
         using KeyType = decltype(details::flatten_function(details::radix_helper_function(f(*begin))));
 
         //typename It::value_type does not work because it can have nested const fields
@@ -65,7 +108,6 @@ namespace risuwwv
         constexpr size_t bitPerBucket = 11;
         constexpr int bucketsCount = details::buckets_count<bitPerBucket, KeyType>{}();
         
-        //TODO: using a type based on end-begin instead of size_t does not seam to improve performances, try with just two: size_t or uint32_t if <= 2^32 elements
         std::array<size_t, (1<<bitPerBucket)> buckets[bucketsCount]{};//zero init
 
         //fill buckets
@@ -79,12 +121,12 @@ namespace risuwwv
             details::fill_buckets<bitPerBucket>(buckets, keyValuePair.first);  
                     
             tmp.push_back(keyValuePair);    
-            tmp2.push_back(keyValuePair);//TODO we can put default constructible ones if available here 
+            tmp2.push_back(keyValuePair);
         }
         
         //buckets[0] is the least significant histogram of the least significant member of the tuple
         
-        //sum buckets:
+        //sum buckets (like future std::exclusive_scan...)
         for(size_t i = 0; i < bucketsCount; ++i)
         { 
 		    size_t sum = 0;
@@ -130,15 +172,15 @@ namespace risuwwv
     }
 
     template<typename Container, typename OutIt, typename Funct>
-    void radix_sort(Container& c, OutIt it, Funct f)
+    void radix_sort(Container& c, OutIt outIt, Funct f)
     {
-        radix_sort(std::begin(c), std::end(c), it, f);
+        radix_sort(std::begin(c), std::end(c), outIt, f);
     }
 
     template<typename Container, typename OutIt>
-    auto radix_sort(Container& c, OutIt it) -> decltype((void)(*(++it) = details::decay_value(*std::begin(c))), void())
+    auto radix_sort(Container& c, OutIt outIt) -> decltype((void)(*(++outIt) = details::decay_value(*std::begin(c))), void())
     {
-        radix_sort(std::begin(c), std::end(c), it, [](auto i){return i;});
+        radix_sort(std::begin(c), std::end(c), outIt, [](auto i){return i;});
     }
 
     template<typename Container>
@@ -148,34 +190,5 @@ namespace risuwwv
     }
 
 }//namespace risuwwv
-
-/*
-template<typename It, typename OutIt, typename Funct>
-void radix_sort(It begin, It end, OutIt it, Funct f);
-
-template<typename It, typename Funct>
-void radix_sort(It begin, It end, Funct f);
-
-template<typename It>
-void radix_sort(It begin, It end);
-
-template<typename Container, typename Funct>
-auto radix_sort(Container& c, Funct f) -> decltype(void(f(*std::begin(c))), void());
-
-//This version takes a accessor functor type. It is used to evaluate each element. This is a bit like a hash function and std::less: the evaluation is used to define the sorted order (example: sort by the ² of input integers)
-//TODO make this clearer
-template<typename Container, typename OutIt, typename Funct>
-void radix_sort(Container& c, OutIt it, Funct f);
-
-//version workind directly on a container. It does NOT need to offer random access. Sorted result will be in OutIt it. It does not need to be a random access iterator. I may overlap with c. Additional memory is used.
-//TODO document that c can be modified even if it is set back to original at the end (if this optim is done)
-template<typename Container, typename OutIt>
-auto radix_sort(Container& c, OutIt it) -> decltype((void)(*(++it) = *std::begin(c)), void());
-
-//version workind directly on a container. It does NOT need to offer random access. The container is modified in place but additional memory is used.
-//TODO take an allocator for the needed memory
-template<typename Container>
-void radix_sort(Container& c);
-*/
 
 #endif//RADIX_SORT_H

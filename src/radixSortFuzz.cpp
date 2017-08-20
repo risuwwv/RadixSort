@@ -142,7 +142,7 @@ void test(const uint8_t *data, std::size_t size)
     radix_sort(v.begin(), v.end());
     std::sort(vc.begin(), vc.end());
 
-    assert(v.size() == vc.size() && std::equal(v.begin(), v.end(), vc.begin()));
+    assert((v.size() == vc.size() && std::equal(v.begin(), v.end(), vc.begin())));
 }
 
 template<std::size_t Idx>
