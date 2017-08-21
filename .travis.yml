@@ -12,7 +12,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-6
-      env: CXX=g++-6 BUILD_MODE=debug TARGETS="unit perf"
+      env: CXX=g++-6 BUILD_MODE=debug TARGETS="unit perf" EXE=
       
     - os: linux
       addons:
@@ -30,4 +30,5 @@ before_script:
     - cp Catch/include/catch.hpp catch.hpp
     
 script:
-    - make mode=BUILD_MODE compiler=CXX $TARGETS
+    - make mode=$BUILD_MODE compiler=$CXX $TARGETS
+    - ./
