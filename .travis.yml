@@ -12,7 +12,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-6
-      env: CXX=g++-6 BUILD_MODE=debug TARGETS="unit perf" EXE=
+      env: COMPILER_NAME=gcc BUILD_MODE=debug TARGETS="unit perf"
       
     - os: linux
       addons:
@@ -22,7 +22,7 @@ matrix:
             - llvm-toolchain-trusty-5.0
           packages:
             - clang-5.0
-      env: CXX=clang-5.0 BUILD_MODE=debug TARGETS="unit fuzz perf"      
+      env: COMPILER_NAME=clang BUILD_MODE=debug TARGETS="unit fuzz perf"      
         
 before_script:   
     - cd src
@@ -30,5 +30,6 @@ before_script:
     - cp Catch/include/catch.hpp catch.hpp
     
 script:
-    - make mode=$BUILD_MODE compiler=$CXX $TARGETS
-    - ./
+    - alias g++='g++-6'  
+    - alias clang++='clang++-5.0'
+    - make mode=$BUILD_MODE compiler=COMPILER_NAME $TARGETS
