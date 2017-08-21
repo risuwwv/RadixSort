@@ -18,6 +18,7 @@
 #include <tuple>
 #include <vector>
 #include <array>
+#include <cassert>
 
 #include "radixSort.h"
 
