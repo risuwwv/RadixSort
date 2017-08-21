@@ -1,4 +1,4 @@
-sudo: false
+sudo: true
 dist: trusty
 language: cpp
 
@@ -14,7 +14,11 @@ matrix:
           packages:
             - g++-7
             - clang-5.0
-      env: COMPILER_NAME=gcc BUILD_MODE=debug TARGETS="unit perf"
+      env: 
+        - COMPILER_NAME=gcc 
+        - BUILD_MODE=debug 
+        - TARGETS="unit perf"
+        - EVAL="sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++"
       
     - os: linux
       addons:
@@ -24,11 +28,14 @@ matrix:
             - llvm-toolchain-trusty-5.0
           packages:
             - clang-5.0
-      env: COMPILER_NAME=clang BUILD_MODE=debug TARGETS="unit fuzz perf"      
-  
+      env: 
+        - COMPILER_NAME=clang 
+        - BUILD_MODE=debug 
+        - TARGETS="unit fuzz perf"      
+        - EVAL="sudo ln -s /usr/bin/clang++-5.0 /usr/bin/clang++"
+        
 before_install:
-    - alias g++='g++-7'  
-    - alias clang++='clang++-5.0'
+    - eval "${EVAL}"
   
 before_script:   
     - cd src
