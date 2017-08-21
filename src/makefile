@@ -77,7 +77,12 @@
 #-std=c++14 or -std=c++1z
 CPP_VERSION=-std=c++1z
 
-CLANG_LINKER=-stdlib=libc++ -lc++
+ifndef travis
+    CLANG_LINKER=-stdlib=libc++ -lc++
+else
+    CLANG_LINKER=
+endif
+
 GCC_LINKER=
 
 SRC=radixSortTests.cpp
