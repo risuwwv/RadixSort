@@ -10,8 +10,10 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
           packages:
-            - g++-6
+            - g++-7
+            - clang-5.0
       env: COMPILER_NAME=gcc BUILD_MODE=debug TARGETS="unit perf"
       
     - os: linux
@@ -30,6 +32,8 @@ before_script:
     - cp Catch/include/catch.hpp catch.hpp
     
 script:
-    - alias g++='g++-6'  
+    - alias g++='g++-7'  
     - alias clang++='clang++-5.0'
+    - g++ -v
+    - clang++ -v
     - make mode=$BUILD_MODE compiler=$COMPILER_NAME $TARGETS
