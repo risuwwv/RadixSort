@@ -20,7 +20,7 @@ matrix:
         - TARGETS="unit perf"
         - EVAL="sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++"
  
-#at the moment, it is complicated to get clang-5.0 with libc++ in travis
+#at the moment, it is complicated to get clang-5.0 with libc++ in travis\
     - os: linux
       addons:
         apt:
@@ -34,7 +34,8 @@ matrix:
       env: 
         - COMPILER_NAME=clang 
         - BUILD_MODE=debug 
-        - TARGETS="unit fuzz perf"      
+        - TARGETS="unit perf"      
+#       - TARGETS="unit fuzz perf" #using libstdc++ make it impossible to build the fuzz        
         - EVAL="sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++ && sudo mv /usr/local/clang-3.5.0/bin/clang++ /usr/local/clang-3.5.0/bin/clang++Old && sudo ln -s /usr/bin/clang++-5.0 /usr/bin/clang++"
         
 before_install:
