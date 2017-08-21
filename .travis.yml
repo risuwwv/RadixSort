@@ -30,4 +30,4 @@ before_script:
     - cp Catch/include/catch.hpp catch.hpp
     
 script:
-    - make mode=BUILD_MODE compiler=CXX TARGETS
+    - make mode=BUILD_MODE compiler=CXX $TARGETS
