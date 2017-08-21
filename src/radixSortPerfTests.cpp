@@ -567,8 +567,10 @@ int main()
     helper<__float128>(sizes, results);
 #endif//__GNUC__*/
 
-    for(const auto& [key, result] : results)
+    for(const auto& p : results)
     {
+		const auto& result = p.second;
+		
         std::cout << "Vect{";
     
         auto size2 = result.size();

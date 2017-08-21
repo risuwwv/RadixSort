@@ -1,0 +1,10 @@
+CORPUS_DIR/
+compile_commands.json
+test_but_not_faster/
+radixSort
+radixSortFuzz
+radixSortPerf
+radixSort.exe
+radixSortFuzz.exe
+radixSortPerf.exe
+catch.hpp
