@@ -40,7 +40,7 @@ before_install:
 before_script:   
     - cd src
     - git clone https://github.com/philsquared/Catch.git
-    - cp Catch/master/single_include/catch.hpp catch.hpp
+    - cp Catch/single_include/catch.hpp catch.hpp
     
 script:
     - which g++
