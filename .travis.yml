@@ -13,13 +13,14 @@ matrix:
             - llvm-toolchain-trusty-5.0
           packages:
             - g++-7
-            - clang-5.0
+
       env: 
         - COMPILER_NAME=gcc 
         - BUILD_MODE=debug 
         - TARGETS="unit perf"
         - EVAL="sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++"
-      
+ 
+#at the moment, it is complicated to get clang-5.0 with libc++ in travis
     - os: linux
       addons:
         apt:
@@ -28,6 +29,7 @@ matrix:
             - llvm-toolchain-trusty-5.0
           packages:
             - clang-5.0
+
       env: 
         - COMPILER_NAME=clang 
         - BUILD_MODE=debug 
@@ -43,9 +45,4 @@ before_script:
     - cp Catch/single_include/catch.hpp catch.hpp
     
 script:
-    - which g++
-    - which clang++
-    - which clang++-5.0
-    - g++ -v
-    - clang++ -v
-    - make mode=$BUILD_MODE compiler=$COMPILER_NAME $TARGETS
+    - make mode=$BUILD_MODE compiler=$COMPILER_NAME $TARGETS travis=1
