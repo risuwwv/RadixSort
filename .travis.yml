@@ -100,7 +100,7 @@ before_script:
     - cp Catch/single_include/catch.hpp catch.hpp
     
 script:
-    - make mode=$BUILD_MODE compiler=$COMPILER_NAME $TARGETS travis=1 sanitize=$SANITIZER
+    - make mode=$BUILD_MODE compiler=$COMPILER_NAME $TARGETS travis=1 sanitize=$SANITIZER -j4
     - ./radixSort
     
 #TODOs:

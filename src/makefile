@@ -133,7 +133,11 @@ GCC_ONLY=-Wuseless-cast -Wzero-as-null-pointer-constant -Wnoexcept -Wsuggest-fin
 	-Wnon-virtual-dtor -Wctor-dtor-privacy \
 	-Wsign-promo -Wsign-conversion -Wdisabled-optimization -Weffc++ -Winline -Winvalid-pch -Wstack-protector \
 	-Wmissing-declarations -Woverloaded-virtual -Wvector-operation-performance -Wlogical-op -Wno-pmf-conversions \
-	-Wunsafe-loop-optimizations -Wstrict-null-sentinel -Wno-error=noexcept -Wno-missing-declarations -Wno-inline -Wno-unsafe-loop-optimizations -fuse-ld=gold
+	-Wunsafe-loop-optimizations -Wstrict-null-sentinel -Wno-error=noexcept -Wno-missing-declarations -Wno-inline -Wno-unsafe-loop-optimizations
+
+ifdef travis
+    GCC_ONLY+=-fuse-ld=gold
+endif	
 
 #-Wno-missing-prototypes does not work for C++ with gcc (-Wno-missing-declarations instead...)
 CLANG_COMMONS=$(COMMONS) -Weverything -fdiagnostics-color=always -Wno-c++98-compat-pedantic -Wno-error=deprecated -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-error=global-constructors -Wno-undefined-func-template -Wno-padded -Wno-error-unused-member-function -Wno-missing-braces $(CLANG_LINKER)
