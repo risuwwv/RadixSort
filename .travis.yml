@@ -30,10 +30,13 @@ before_script:
     - cd src
     - git clone https://github.com/philsquared/Catch.git
     - cp Catch/include/catch.hpp catch.hpp
-    
-script:
     - alias g++='g++-7'  
     - alias clang++='clang++-5.0'
+    
+script:
+    - which g++
+    - which clang++
+    - which clang++-5.0
     - g++ -v
     - clang++ -v
     - make mode=$BUILD_MODE compiler=$COMPILER_NAME $TARGETS
