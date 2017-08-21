@@ -32,4 +32,4 @@ before_script:
 script:
     - alias g++='g++-6'  
     - alias clang++='clang++-5.0'
-    - make mode=$BUILD_MODE compiler=COMPILER_NAME $TARGETS
+    - make mode=$BUILD_MODE compiler=$COMPILER_NAME $TARGETS
