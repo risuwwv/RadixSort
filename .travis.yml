@@ -25,13 +25,15 @@ matrix:
           packages:
             - clang-5.0
       env: COMPILER_NAME=clang BUILD_MODE=debug TARGETS="unit fuzz perf"      
-        
+  
+before_install:
+    - alias g++='g++-7'  
+    - alias clang++='clang++-5.0'
+  
 before_script:   
     - cd src
     - git clone https://github.com/philsquared/Catch.git
     - cp Catch/include/catch.hpp catch.hpp
-    - alias g++='g++-7'  
-    - alias clang++='clang++-5.0'
     
 script:
     - which g++
