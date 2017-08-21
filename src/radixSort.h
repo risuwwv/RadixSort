@@ -31,8 +31,11 @@
 /*
 DONE:
 -use CATCH or another lib for unit tests
+-added travis-ci to repository
 
 TODOs:
+-travis-ci should also build the fuzzing in clang + libc++ (right now : problem installing libc++)
+-add non regression perf test (with stable rule) to travis-ci
 -why no (begin, end, outIt) without functor
 -f below is not clear, call it keyExtractor or something or radixKey
 -static asserts may be separated from runtime tests to make it easier to read

@@ -20,7 +20,7 @@ matrix:
         - TARGETS="unit perf"
         - EVAL="sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++"
  
-#at the moment, it is complicated to get clang-5.0 with libc++ in travis\
+#at the moment, it is complicated to get clang-5.0 with libc++ in travis
     - os: linux
       addons:
         apt:
@@ -48,3 +48,22 @@ before_script:
     
 script:
     - make mode=$BUILD_MODE compiler=$COMPILER_NAME $TARGETS travis=1
+    - ./radixSort
+    
+#TODOs:
+#   split perf and unit builds and runs to reduce time?
+#   test osx
+#   add release builds
+#   sanitizers: 
+#
+#make compiler=gcc sanitize=scan-build
+#make compiler=gcc sanitize=ubsan
+#make compiler=gcc sanitize=asan
+#make compiler=gcc sanitize=tsan
+#make compiler=gcc sanitize=sast
+
+#make compiler=clang sanitize=scan-build
+#make compiler=clang sanitize=ubsan
+#make compiler=clang sanitize=asan
+#make compiler=clang sanitize=tsan
+#make compiler=clang sanitize=sast

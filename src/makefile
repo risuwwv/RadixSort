@@ -1,15 +1,4 @@
-#Examples
-#	"make compiler=gcc"
-#	"make compiler=gcc mode=debug"
-#   "make compiler=gcc > test.txt 2>&1"
-#   "make -j8"
-#   "~/Desktop/main"
-
-################################################################################################
-
 #make format
-
-#make compiler=gcc test=1 #gtest does not work with clang/libc++ because of the way I installed it...
 
 #make compiler=gcc sanitize=scan-build
 #make compiler=gcc sanitize=ubsan
