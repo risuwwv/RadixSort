@@ -5,6 +5,7 @@ language: cpp
 matrix:
   include:
 
+    #linux gcc7 debug build
     - os: linux
       addons:
         apt:
@@ -19,6 +20,58 @@ matrix:
         - BUILD_MODE=debug 
         - TARGETS="unit perf"
         - EVAL="sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++"
+ 
+    #linux gcc7 debug undefined sanitizer build
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - g++-7
+
+      env: 
+        - COMPILER_NAME=gcc 
+        - BUILD_MODE=debug 
+        - TARGETS="unit perf"
+        - EVAL="sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++"
+        - SANITIZER=ubsan
+        
+    #linux gcc7 debug address sanitizer build
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - g++-7
+
+      env: 
+        - COMPILER_NAME=gcc 
+        - BUILD_MODE=debug 
+        - TARGETS="unit perf"
+        - EVAL="sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++"
+        - SANITIZER=asan
+        
+    #linux gcc7 release build
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - g++-7
+
+      env: 
+        - COMPILER_NAME=gcc 
+        - BUILD_MODE=release 
+        - TARGETS="unit perf"
+        - EVAL="sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-7 /usr/bin/g++"
+    
+  
  
 #at the moment, it is complicated to get clang-5.0 with libc++ in travis
     - os: linux
@@ -47,13 +100,15 @@ before_script:
     - cp Catch/single_include/catch.hpp catch.hpp
     
 script:
-    - make mode=$BUILD_MODE compiler=$COMPILER_NAME $TARGETS travis=1
+    - make mode=$BUILD_MODE compiler=$COMPILER_NAME $TARGETS travis=1 sanitize=$SANITIZER
     - ./radixSort
     
 #TODOs:
 #   split perf and unit builds and runs to reduce time?
 #   test osx
-#   add release builds
+#   add release build for clang
+#   build in 32 bits (it is broken in local at the moment: fix it first)   
+#
 #   sanitizers: 
 #
 #make compiler=gcc sanitize=scan-build

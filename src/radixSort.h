@@ -34,6 +34,7 @@ DONE:
 -added travis-ci to repository
 
 TODOs:
+-fix m32=1 builds
 -travis-ci should also build the fuzzing in clang + libc++ (right now : problem installing libc++)
 -add non regression perf test (with stable rule) to travis-ci
 -why no (begin, end, outIt) without functor
